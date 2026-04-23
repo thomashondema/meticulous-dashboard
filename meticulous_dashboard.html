@@ -140,17 +140,19 @@
       },
 
       async loadApiClass() {
-        const rawUrl = 'https://raw.githubusercontent.com/MeticulousHome/meticulous-typescript-api/refs/heads/dist/dist/index.js';
-        const esmFromRaw = `https://esm.sh/${rawUrl}`;
-        const esmFromGh = 'https://esm.sh/gh/MeticulousHome/meticulous-typescript-api@dist/dist/index.js';
+        const packageName = '@meticulous-home/espresso-api';
+        const cdnUrl = `https://esm.sh/${packageName}`;
 
-        let mod;
         try {
-          mod = await import(esmFromRaw);
-        } catch (_) {
-          mod = await import(esmFromGh);
+          const mod = await import(cdnUrl);
+          // If the package exports a default class (which it does in its TS/CJS structure)
+          return mod.default || mod;
+        } catch (e) {
+          console.error('Failed to load API from npm CDN, falling back to GitHub dist', e);
+          const rawUrl = 'https://raw.githubusercontent.com/MeticulousHome/meticulous-typescript-api/refs/heads/dist/dist/index.js';
+          const mod = await import(`https://esm.sh/${rawUrl}`);
+          return mod.default || mod;
         }
-        return mod.default || mod;
       },
 
       async connect() {
