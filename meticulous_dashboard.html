@@ -6,6 +6,7 @@
   <title>Meticulous Machine Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100" x-data="dashboardApp()">
 <main class="mx-auto max-w-6xl p-4 md:p-8">
@@ -16,6 +17,22 @@
     </div>
     <template x-if="connected">
       <div class="flex gap-2">
+        <nav class="flex gap-1 rounded-md bg-slate-900 p-1">
+          <button
+            @click="activeTab = 'overview'"
+            :class="activeTab === 'overview' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'"
+            class="rounded px-3 py-1 text-sm font-medium transition"
+          >
+            Overview
+          </button>
+          <button
+            @click="activeTab = 'history'; fetchHistory()"
+            :class="activeTab === 'history' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'"
+            class="rounded px-3 py-1 text-sm font-medium transition"
+          >
+            History
+          </button>
+        </nav>
         <button @click="refreshAll" class="rounded-md bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Refresh</button>
         <button @click="disconnect" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Disconnect</button>
       </div>
@@ -46,7 +63,8 @@
   </section>
 
   <section x-show="connected" x-cloak class="space-y-4">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div x-show="activeTab === 'overview'" class="space-y-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
         <h3 class="text-sm text-slate-400">Machine</h3>
         <p class="mt-1 text-lg font-medium" x-text="deviceInfo?.name || '-' "></p>
@@ -93,27 +111,109 @@
       </article>
     </div>
 
-    <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
-      <h3 class="mb-3 text-sm font-medium text-slate-300">Profiles (short list)</h3>
-      <div class="overflow-auto">
-        <table class="min-w-full text-left text-sm">
-          <thead class="text-slate-400">
-          <tr>
-            <th class="px-2 py-1">Name</th>
-            <th class="px-2 py-1">ID</th>
-          </tr>
-          </thead>
-          <tbody>
-          <template x-for="profile in profiles" :key="profile.id">
-            <tr class="border-t border-slate-800">
-              <td class="px-2 py-1" x-text="profile.name"></td>
-              <td class="px-2 py-1 font-mono text-xs text-slate-400" x-text="profile.id"></td>
+      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <h3 class="mb-3 text-sm font-medium text-slate-300">Profiles (short list)</h3>
+        <div class="overflow-auto">
+          <table class="min-w-full text-left text-sm">
+            <thead class="text-slate-400">
+            <tr>
+              <th class="px-2 py-1">Name</th>
+              <th class="px-2 py-1">ID</th>
             </tr>
+            </thead>
+            <tbody>
+            <template x-for="profile in profiles" :key="profile.id">
+              <tr class="border-t border-slate-800">
+                <td class="px-2 py-1" x-text="profile.name"></td>
+                <td class="px-2 py-1 font-mono text-xs text-slate-400" x-text="profile.id"></td>
+              </tr>
+            </template>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+
+    <div x-show="activeTab === 'history'" class="space-y-4">
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <article class="col-span-1 rounded-xl border border-slate-800 bg-slate-900 p-4 lg:col-span-1">
+          <h3 class="mb-3 text-sm font-medium text-slate-300">Shot History</h3>
+          <div class="max-h-[600px] overflow-auto">
+            <template x-for="shot in history" :key="shot.id">
+              <div
+                @click="viewShot(shot)"
+                :class="selectedShot?.id === shot.id ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 hover:border-slate-700'"
+                class="mb-2 cursor-pointer rounded-lg border p-3 transition"
+              >
+                <div class="flex items-center justify-between">
+                  <p class="font-medium" x-text="shot.name || 'Unnamed Shot'"></p>
+                  <span
+                    class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
+                    :class="shot.rating === 'like' ? 'bg-emerald-500/20 text-emerald-400' : shot.rating === 'dislike' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700 text-slate-400'"
+                    x-text="shot.rating || 'none'"
+                  ></span>
+                </div>
+                <p class="mt-1 text-xs text-slate-400" x-text="formatShotTime(shot.time)"></p>
+              </div>
+            </template>
+            <p x-show="!history.length" class="py-8 text-center text-sm text-slate-500">No shots found in history.</p>
+          </div>
+        </article>
+
+        <article class="col-span-1 rounded-xl border border-slate-800 bg-slate-900 p-4 lg:col-span-2">
+          <h3 class="mb-3 text-sm font-medium text-slate-300">Shot Details</h3>
+          <template x-if="selectedShot">
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div class="rounded-md bg-slate-950 p-3">
+                  <p class="text-[10px] uppercase text-slate-500">ID</p>
+                  <p class="truncate font-mono text-xs" x-text="selectedShot.id"></p>
+                </div>
+                <div class="rounded-md bg-slate-950 p-3">
+                  <p class="text-[10px] uppercase text-slate-500">Rating</p>
+                  <p class="text-xs" x-text="selectedShot.rating || 'Unrated'"></p>
+                </div>
+                <div class="rounded-md bg-slate-950 p-3">
+                  <p class="text-[10px] uppercase text-slate-500">DB Key</p>
+                  <p class="text-xs" x-text="selectedShot.db_key || '-'"></p>
+                </div>
+                <div class="rounded-md bg-slate-950 p-3">
+                  <p class="text-[10px] uppercase text-slate-500">File</p>
+                  <p class="truncate text-xs" x-text="selectedShot.file || '-'"></p>
+                </div>
+              </div>
+              <div>
+                <p class="mb-2 text-xs font-medium text-slate-400">Profile Configuration</p>
+                <pre class="max-h-80 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-300" x-text="pretty(selectedShot.profile)"></pre>
+              </div>
+              <template x-if="selectedShot.data">
+                <div>
+                  <p class="mb-2 text-xs font-medium text-slate-400">Shot Visualization</p>
+                  <div class="mb-4 h-64 w-full rounded-md bg-slate-950 p-2">
+                    <canvas id="shotChart"></canvas>
+                  </div>
+                  <p class="mb-2 text-xs font-medium text-slate-400">Shot Data Points (Raw)</p>
+                  <pre class="max-h-64 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-300" x-text="pretty(selectedShot.data)"></pre>
+                </div>
+              </template>
+              <template x-if="!selectedShot.data">
+                <button
+                  @click="fetchShotData(selectedShot)"
+                  class="w-full rounded-md bg-slate-800 py-2 text-xs hover:bg-slate-700"
+                >
+                  Load Full Shot Data
+                </button>
+              </template>
+            </div>
           </template>
-          </tbody>
-        </table>
+          <template x-if="!selectedShot">
+            <div class="flex h-64 items-center justify-center text-slate-500">
+              <p>Select a shot to view details</p>
+            </div>
+          </template>
+        </article>
       </div>
-    </article>
+    </div>
 
     <p x-show="error" x-text="error" class="text-sm text-rose-400"></p>
   </section>
@@ -125,13 +225,16 @@
       baseUrl: localStorage.getItem('meticulous.baseUrl') || '',
       connected: false,
       connecting: false,
+      activeTab: 'overview',
+      history: [],
+      selectedShot: null,
       error: '',
       actionMessage: '',
       api: null,
       deviceInfo: null,
       settings: null,
       profiles: [],
-      lastShot: null,
+      chart: null,
 
       normalizeBaseUrl(url) {
         let value = (url || '').trim().replace(/\/+$/, '');
@@ -181,10 +284,13 @@
         }
         this.api = null;
         this.connected = false;
+        this.activeTab = 'overview';
         this.deviceInfo = null;
         this.settings = null;
         this.profiles = [];
         this.lastShot = null;
+        this.history = [];
+        this.selectedShot = null;
         this.actionMessage = '';
         this.error = '';
       },
@@ -221,6 +327,144 @@
         } catch (e) {
           this.error = `Action failed: ${e?.message || e}`;
         }
+      },
+
+      async fetchHistory() {
+        if (!this.api) return;
+        try {
+          const res = await this.api.getHistoryShortListing();
+          this.history = res.data.history || [];
+        } catch (e) {
+          this.error = `Failed to fetch history: ${e?.message || e}`;
+        }
+      },
+
+      async viewShot(shot) {
+        this.selectedShot = shot;
+        if (shot.data) {
+          this.$nextTick(() => this.renderChart(shot.data));
+        }
+      },
+
+      async fetchShotData(shot) {
+        if (!this.api) return;
+        try {
+          const res = await this.api.searchHistory({ ids: [shot.id], dump_data: true });
+          if (res.data.history && res.data.history.length > 0) {
+            const fullShot = res.data.history[0];
+            // Update in the list as well if found
+            const idx = this.history.findIndex(s => s.id === shot.id);
+            if (idx !== -1) {
+              this.history[idx] = fullShot;
+            }
+            this.selectedShot = fullShot;
+            this.$nextTick(() => this.renderChart(fullShot.data));
+          }
+        } catch (e) {
+          this.error = `Failed to fetch shot data: ${e?.message || e}`;
+        }
+      },
+
+      renderChart(data) {
+        const ctx = document.getElementById('shotChart');
+        if (!ctx) return;
+
+        if (this.chart) {
+          this.chart.destroy();
+        }
+
+        // Assuming data is an array of objects with time, pressure, flow, temperature
+        // Let's check common keys in Meticulous data: time, pressure, flow, temp (or similar)
+        const labels = data.map(d => (d.time || 0).toFixed(1));
+        const datasets = [];
+
+        if (data.length > 0) {
+          const first = data[0];
+          if ('pressure' in first) {
+            datasets.push({
+              label: 'Pressure (bar)',
+              data: data.map(d => d.pressure),
+              borderColor: 'rgb(244, 63, 94)', // rose-500
+              backgroundColor: 'rgba(244, 63, 94, 0.5)',
+              yAxisID: 'y',
+              tension: 0.1
+            });
+          }
+          if ('flow' in first) {
+            datasets.push({
+              label: 'Flow (ml/s)',
+              data: data.map(d => d.flow),
+              borderColor: 'rgb(56, 189, 248)', // sky-400
+              backgroundColor: 'rgba(56, 189, 248, 0.5)',
+              yAxisID: 'y1',
+              tension: 0.1
+            });
+          }
+          if ('temperature' in first || 'temp' in first) {
+            datasets.push({
+              label: 'Temp (°C)',
+              data: data.map(d => d.temperature || d.temp),
+              borderColor: 'rgb(251, 191, 36)', // amber-400
+              backgroundColor: 'rgba(251, 191, 36, 0.5)',
+              yAxisID: 'y2',
+              tension: 0.1
+            });
+          }
+        }
+
+        this.chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            stacked: false,
+            scales: {
+              x: {
+                title: { display: true, text: 'Time (s)', color: '#94a3b8' },
+                ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 10 },
+                grid: { color: '#334155' }
+              },
+              y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: { display: true, text: 'Pressure', color: 'rgb(244, 63, 94)' },
+                ticks: { color: 'rgb(244, 63, 94)' },
+                grid: { color: '#334155' }
+              },
+              y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: { display: true, text: 'Flow', color: 'rgb(56, 189, 248)' },
+                ticks: { color: 'rgb(56, 189, 248)' },
+                grid: { drawOnChartArea: false }
+              },
+              y2: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                offset: true,
+                title: { display: true, text: 'Temp', color: 'rgb(251, 191, 36)' },
+                ticks: { color: 'rgb(251, 191, 36)' },
+                grid: { drawOnChartArea: false }
+              }
+            },
+            plugins: {
+              legend: {
+                labels: { color: '#f1f5f9' }
+              }
+            }
+          }
+        });
       },
 
       pretty(value) {
