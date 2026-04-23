@@ -32,6 +32,22 @@
           >
             History
           </button>
+
+          <button
+            @click="activeTab = 'notifications'; fetchNotifications()"
+            :class="activeTab === 'notifications' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'"
+            class="rounded px-3 py-1 text-sm font-medium transition"
+          >
+            Notifications
+          </button>
+
+          <button
+            @click="activeTab = 'profiles'; fetchAllProfiles()"
+            :class="activeTab === 'profiles' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'"
+            class="rounded px-3 py-1 text-sm font-medium transition"
+          >
+            Profiles
+          </button>
         </nav>
         <button @click="refreshAll" class="rounded-md bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Refresh</button>
         <button @click="disconnect" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Disconnect</button>
@@ -213,6 +229,239 @@
           </template>
         </article>
       </div>
+<div x-show="activeTab === 'notifications'"> <div class="flex items-center justify-between"> <h2 class="text-xl font-semibold">Notifications</h2> <button @click="fetchNotifications" class="rounded-md bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">Refresh</button> </div> <section class="space-y-4"> <h3 class="text-lg font-medium text-slate-300">Active Notifications</h3> <div class="grid grid-cols-1 gap-4"> <template x-for="n in activeNotifications" :key="n.id"> <article class="flex flex-col gap-4 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4 md:flex-row md:items-center"> <div class="flex-1"> <div class="mb-1 flex items-center justify-between"> <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400" x-text="new Date(n.timestamp).toLocaleString()"></span> </div> <p class="text-slate-200" x-text="n.message"></p> </div> </article> </template> </div> </section> </div>
+
+    </div>
+
+    <div x-show="activeTab === 'profiles'" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Profile Management</h2>
+        <div class="flex gap-2">
+          <button @click="createNewProfile" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm hover:bg-indigo-500">New Profile</button>
+          <label class="cursor-pointer rounded-md bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">
+            Import JSON
+            <input type="file" accept=".json" class="hidden" @change="importProfile($event)" />
+          </label>
+        </div>
+      </div>
+
+      <template x-if="!editingProfile">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <template x-for="p in fullProfiles" :key="p.id">
+            <article class="rounded-xl border border-slate-800 bg-slate-900 p-4 transition hover:border-slate-700">
+              <div class="mb-2 flex items-start justify-between">
+                <div>
+                  <h3 class="font-medium" x-text="p.name"></h3>
+                  <p class="text-xs text-slate-400" x-text="p.author || 'No author'"></p>
+                </div>
+                <div class="h-3 w-3 rounded-full" :style="{ backgroundColor: p.display?.accentColor || '#2E6F40' }"></div>
+              </div>
+              <p class="mb-4 font-mono text-[10px] text-slate-500" x-text="p.id"></p>
+              <div class="flex gap-2">
+                <button @click="editProfile(p)" class="flex-1 rounded bg-slate-800 py-1.5 text-xs hover:bg-slate-700">Edit</button>
+                <button @click="deleteProfile(p.id)" class="rounded bg-rose-900/50 px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-900">Delete</button>
+              </div>
+            </article>
+          </template>
+          <div x-show="!fullProfiles.length" class="col-span-full py-12 text-center text-slate-500">
+            No profiles found on machine.
+          </div>
+        </div>
+      </template>
+
+      <template x-if="editingProfile">
+        <div class="space-y-6 rounded-xl border border-slate-800 bg-slate-900 p-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-medium" x-text="editingProfile.id ? 'Edit Profile' : 'New Profile'"></h3>
+            <button @click="editingProfile = null" class="text-sm text-slate-400 hover:text-slate-200">Cancel</button>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <label class="block text-sm">
+              Profile Name
+              <input x-model="editingProfile.name" type="text" class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+            <label class="block text-sm">
+              Author
+              <input x-model="editingProfile.author" type="text" class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+            <label class="block text-sm">
+              Accent Color
+              <input x-model="editingProfile.display.accentColor" type="text" class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+            <label class="block text-sm">
+              Temperature (°C)
+              <input x-model.number="editingProfile.temperature" type="number" step="0.1" class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+            <label class="block text-sm">
+              Final Weight (g)
+              <input x-model.number="editingProfile.final_weight" type="number" step="0.1" class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+            <label class="block text-sm">
+              Profile ID (UUID)
+              <input x-model="editingProfile.id" type="text" readonly class="mt-1 w-full rounded-md border border-slate-800 bg-slate-950/50 px-3 py-2 text-slate-500 outline-none" />
+            </label>
+          </div>
+
+          <section class="space-y-4">
+            <div class="flex items-center justify-between border-t border-slate-800 pt-4">
+              <h4 class="font-medium text-slate-300">Variables</h4>
+              <button @click="addVariable" class="text-xs text-indigo-400 hover:text-indigo-300">+ Add Variable</button>
+            </div>
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <template x-for="(v, index) in editingProfile.variables" :key="index">
+                <div class="rounded-lg border border-slate-800 bg-slate-950 p-3">
+                  <div class="mb-2 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500" x-text="'Variable #' + (index + 1)"></span>
+                    <button @click="editingProfile.variables.splice(index, 1)" class="text-xs text-rose-500 hover:text-rose-400">Remove</button>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <input x-model="v.name" type="text" placeholder="Name" class="rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs" />
+                    <input x-model="v.key" type="text" placeholder="Key" class="rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs" />
+                    <select x-model="v.type" class="rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs">
+                      <option value="flow">flow</option>
+                      <option value="power">power</option>
+                      <option value="pressure">pressure</option>
+                      <option value="time">time</option>
+                      <option value="weight">weight</option>
+                    </select>
+                    <input x-model="v.value" type="text" placeholder="Value" class="rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs" />
+                  </div>
+                </div>
+              </template>
+            </div>
+          </section>
+
+          <section class="space-y-4">
+            <div class="flex items-center justify-between border-t border-slate-800 pt-4">
+              <h4 class="font-medium text-slate-300">Stages</h4>
+              <button @click="addStage" class="text-xs text-indigo-400 hover:text-indigo-300">+ Add Stage</button>
+            </div>
+            <div class="space-y-4">
+              <template x-for="(s, sIdx) in editingProfile.stages" :key="sIdx">
+                <div class="rounded-lg border border-slate-800 bg-slate-950 p-4">
+                  <div class="mb-3 flex items-center justify-between">
+                    <input x-model="s.name" type="text" class="bg-transparent font-medium text-slate-200 focus:outline-none" />
+                    <button @click="editingProfile.stages.splice(sIdx, 1)" class="text-xs text-rose-500 hover:text-rose-400">Remove Stage</button>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <label class="text-[10px] uppercase text-slate-500">
+                      Key
+                      <input x-model="s.key" type="text" class="mt-1 w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs" />
+                    </label>
+                    <label class="text-[10px] uppercase text-slate-500">
+                      Type
+                      <select x-model="s.type" class="mt-1 w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs">
+                        <option value="flow">flow</option>
+                        <option value="power">power</option>
+                        <option value="pressure">pressure</option>
+                      </select>
+                    </label>
+                    <label class="text-[10px] uppercase text-slate-500">
+                      Dynamics Over
+                      <select x-model="s.dynamics.over" class="mt-1 w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs">
+                        <option value="time">time</option>
+                        <option value="weight">weight</option>
+                        <option value="pressure">pressure</option>
+                      </select>
+                    </label>
+                    <label class="text-[10px] uppercase text-slate-500">
+                      Interpolation
+                      <select x-model="s.dynamics.interpolation" class="mt-1 w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs">
+                        <option value="linear">linear</option>
+                        <option value="curve">curve</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase text-slate-600">Points</span>
+                        <button @click="s.dynamics.points.push(['0','0'])" class="text-[10px] text-indigo-400">+ Add</button>
+                      </div>
+                      <div class="space-y-1">
+                        <template x-for="(p, pIdx) in s.dynamics.points" :key="pIdx">
+                          <div class="flex gap-1">
+                            <input x-model="p[0]" type="text" placeholder="X" class="w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
+                            <input x-model="p[1]" type="text" placeholder="Y" class="w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
+                            <button @click="s.dynamics.points.splice(pIdx, 1)" class="text-rose-500 px-1">×</button>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase text-slate-600">Triggers</span>
+                        <button @click="s.exit_triggers.push({type:'time',value:'10',comparison:'>=',relative:true})" class="text-[10px] text-indigo-400">+ Add</button>
+                      </div>
+                      <div class="space-y-1">
+                        <template x-for="(t, tIdx) in s.exit_triggers" :key="tIdx">
+                          <div class="rounded border border-slate-800 bg-slate-900 p-2 text-[10px]">
+                            <div class="mb-1 flex justify-between">
+                              <select x-model="t.type" class="bg-transparent outline-none">
+                                <option value="time">time</option>
+                                <option value="weight">weight</option>
+                                <option value="pressure">pressure</option>
+                                <option value="flow">flow</option>
+                                <option value="piston_position">piston_position</option>
+                                <option value="temperature">temperature</option>
+                                <option value="power">power</option>
+                              </select>
+                              <button @click="s.exit_triggers.splice(tIdx, 1)" class="text-rose-500">Remove</button>
+                            </div>
+                            <div class="flex gap-1">
+                              <select x-model="t.comparison" class="w-1/3 rounded border border-slate-700 bg-slate-800 px-1 py-0.5">
+                                <option value=">=">>=</option>
+                                <option value=">">></option>
+                                <option value="<="><=</option>
+                                <option value="<"><</option>
+                                <option value="==">==</option>
+                              </select>
+                              <input x-model="t.value" type="text" class="w-1/3 rounded border border-slate-700 bg-slate-800 px-1 py-0.5" />
+                              <select x-model="t.relative" class="w-1/3 rounded border border-slate-700 bg-slate-800 px-1 py-0.5">
+                                <option :value="true">Rel</option>
+                                <option :value="false">Abs</option>
+                              </select>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase text-slate-600">Limits</span>
+                        <button @click="s.limits.push({type:'pressure',value:'1.0'})" class="text-[10px] text-indigo-400">+ Add</button>
+                      </div>
+                      <div class="space-y-1">
+                        <template x-for="(l, lIdx) in s.limits" :key="lIdx">
+                          <div class="flex gap-1">
+                            <select x-model="l.type" class="w-1/2 rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]">
+                              <option value="pressure">pressure</option>
+                              <option value="flow">flow</option>
+                              <option value="power">power</option>
+                              <option value="temperature">temperature</option>
+                            </select>
+                            <input x-model="l.value" type="text" class="w-1/2 rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
+                            <button @click="s.limits.splice(lIdx, 1)" class="text-rose-500 px-1">×</button>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </section>
+
+          <div class="flex justify-end gap-3 border-t border-slate-800 pt-6">
+            <button @click="editingProfile = null" class="rounded-md border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800">Cancel</button>
+            <button @click="saveProfile" class="rounded-md bg-indigo-600 px-6 py-2 text-sm font-medium hover:bg-indigo-500">Save Profile</button>
+          </div>
+        </div>
+      </template>
     </div>
 
     <p x-show="error" x-text="error" class="text-sm text-rose-400"></p>
@@ -226,6 +475,9 @@
       connected: false,
       connecting: false,
       activeTab: 'overview',
+      activeNotifications: [],
+      acknowledgedNotifications: [],
+
       history: [],
       selectedShot: null,
       error: '',
@@ -234,7 +486,44 @@
       deviceInfo: null,
       settings: null,
       profiles: [],
+      fullProfiles: [],
+      editingProfile: null,
       chart: null,
+
+      uuid() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return window.crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          const v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      },
+
+      parseTyped(value) {
+        const text = String(value).trim();
+        if (text.startsWith('$')) {
+          return text;
+        }
+        const asNumber = Number(text);
+        return Number.isFinite(asNumber) ? asNumber : text;
+      },
+
+      deepParse(obj) {
+        if (Array.isArray(obj)) {
+          return obj.map(item => this.deepParse(item));
+        } else if (obj !== null && typeof obj === 'object') {
+          const newObj = {};
+          for (const key in obj) {
+            newObj[key] = this.deepParse(obj[key]);
+          }
+          return newObj;
+        } else if (typeof obj === 'string' || typeof obj === 'number') {
+          return this.parseTyped(obj);
+        }
+        return obj;
+      },
 
       normalizeBaseUrl(url) {
         let value = (url || '').trim().replace(/\/+$/, '');
@@ -292,7 +581,11 @@
         this.history = [];
         this.selectedShot = null;
         this.actionMessage = '';
+          this.api.getNotifications(false),
+
         this.error = '';
+        if (notifications.status === 'fulfilled') this.activeNotifications = Array.isArray(notifications.value.data) ? notifications.value.data : [];
+
       },
 
       async refreshAll() {
@@ -465,6 +758,137 @@
             }
           }
         });
+      },
+
+      async fetchAllProfiles() {
+        if (!this.api) return;
+        try {
+          const res = await this.api.fetchAllProfiles();
+          this.fullProfiles = Array.isArray(res.data) ? res.data : [];
+        } catch (e) {
+          this.error = `Failed to fetch full profiles: ${e?.message || e}`;
+        }
+      },
+
+      createNewProfile() {
+        this.editingProfile = {
+          name: 'New Profile',
+          id: this.uuid(),
+          author: 'meticulous',
+          author_id: '',
+          previous_authors: [],
+          display: {
+            accentColor: '#2E6F40'
+          },
+          temperature: 93,
+          final_weight: 40,
+          variables: [{ name: 'Flow Rate', key: 'flow_rate', type: 'flow', value: '4' }],
+          stages: [{
+            name: 'Stage 1',
+            key: 'stage_1',
+            type: 'flow',
+            dynamics: {
+              points: [['0', '4']],
+              over: 'time',
+              interpolation: 'linear'
+            },
+            exit_triggers: [{ type: 'time', value: '10', comparison: '>=', relative: true }],
+            limits: []
+          }]
+        };
+      },
+
+      addVariable() {
+        this.editingProfile.variables.push({ name: 'Variable', key: 'var_key', type: 'flow', value: '1' });
+      },
+
+      addStage() {
+        const idx = this.editingProfile.stages.length + 1;
+        this.editingProfile.stages.push({
+          name: `Stage ${idx}`,
+          key: `stage_${idx}`,
+          type: 'flow',
+          dynamics: {
+            points: [['0', '4']],
+            over: 'time',
+            interpolation: 'linear'
+          },
+          exit_triggers: [{ type: 'time', value: '10', comparison: '>=', relative: true }],
+          limits: []
+        });
+      },
+
+      async editProfile(profile) {
+        // Clone to avoid direct mutation
+        this.editingProfile = JSON.parse(JSON.stringify(profile));
+      },
+
+      async deleteProfile(id) {
+        if (!confirm('Are you sure you want to delete this profile?')) return;
+        try {
+          await this.api.deleteProfile(id);
+          await this.fetchAllProfiles();
+          await this.refreshAll();
+        } catch (e) {
+          this.error = `Failed to delete profile: ${e?.message || e}`;
+        }
+      },
+
+      async saveProfile() {
+        if (!this.api || !this.editingProfile) return;
+        try {
+          const profileToSave = this.deepParse(this.editingProfile);
+          await this.api.saveProfile(profileToSave);
+          this.editingProfile = null;
+          await this.fetchAllProfiles();
+          await this.refreshAll();
+        } catch (e) {
+          this.error = `Failed to save profile: ${e?.message || e}`;
+        }
+      },
+
+      async importProfile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const profile = JSON.parse(e.target.result);
+            // Ensure ID is unique if importing as new, or keep if overwriting?
+            // Usually we want to edit it first.
+            this.editingProfile = profile;
+            if (!this.editingProfile.id) this.editingProfile.id = this.uuid();
+            event.target.value = ''; // Reset input
+          } catch (err) {
+            this.error = `Failed to parse JSON: ${err.message}`;
+          }
+        };
+        reader.readAsText(file);
+      },
+
+      async fetchNotifications() {
+        if (!this.api) return;
+        try {
+          const [active, acknowledged] = await Promise.all([
+            this.api.getNotifications(false),
+            this.api.getNotifications(true)
+          ]);
+          this.activeNotifications = Array.isArray(active.data) ? active.data : [];
+          this.acknowledgedNotifications = Array.isArray(acknowledged.data) ? acknowledged.data : [];
+        } catch (e) {
+          this.error = `Failed to fetch notifications: ${e?.message || e}`;
+        }
+      },
+
+      async acknowledgeNotification(id, response) {
+        if (!this.api) return;
+        try {
+          await this.api.acknowledgeNotification({ id, response });
+          await this.fetchNotifications();
+        } catch (e) {
+          this.error = `Failed to acknowledge notification: ${e?.message || e}`;
+        }
       },
 
       pretty(value) {
