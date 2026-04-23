@@ -9,7 +9,14 @@ http:
   headers:
     - name: Accept
       value: application/json
-  body: {}
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "ssid": "OldWifiSSID"
+      }
   auth: inherit
 
 settings:

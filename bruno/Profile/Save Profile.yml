@@ -9,7 +9,48 @@ http:
   headers:
     - name: Accept
       value: application/json
-  body: {}
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "name": "Example Profile",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "author": "meticulous",
+        "author_id": "d9123a0a-d3d7-40fd-a548-b81376e43f23",
+        "previous_authors": [],
+        "display": {
+          "accentColor": "#2E6F40"
+        },
+        "temperature": 93,
+        "final_weight": 40,
+        "variables": [],
+        "stages": [
+          {
+            "name": "Pour",
+            "key": "pour_1",
+            "type": "flow",
+            "dynamics": {
+              "points": [
+                [0, 3],
+                [10, 3]
+              ],
+              "over": "time",
+              "interpolation": "linear"
+            },
+            "exit_triggers": [
+              {
+                "type": "weight",
+                "value": 40,
+                "relative": false,
+                "comparison": ">="
+              }
+            ],
+            "limits": []
+          }
+        ]
+      }
   auth: inherit
 
 settings:

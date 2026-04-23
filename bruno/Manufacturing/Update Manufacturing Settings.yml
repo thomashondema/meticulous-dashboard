@@ -9,7 +9,15 @@ http:
   headers:
     - name: Accept
       value: application/json
-  body: {}
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "enabled": false,
+        "skip_stage": false
+      }
   auth: inherit
 
 settings:

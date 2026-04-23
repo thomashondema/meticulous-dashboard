@@ -9,6 +9,48 @@ http:
   headers:
     - name: Accept
       value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "name": "Loaded Profile",
+        "id": "00000000-0000-4000-8000-000000000002",
+        "author": "meticulous",
+        "author_id": "d9123a0a-d3d7-40fd-a548-b81376e43f23",
+        "previous_authors": [],
+        "display": {
+          "accentColor": "#6A4C93"
+        },
+        "temperature": 92,
+        "final_weight": 36,
+        "variables": [],
+        "stages": [
+          {
+            "name": "Extract",
+            "key": "extract_1",
+            "type": "pressure",
+            "dynamics": {
+              "points": [
+                [0, 6],
+                [20, 6]
+              ],
+              "over": "time",
+              "interpolation": "linear"
+            },
+            "exit_triggers": [
+              {
+                "type": "weight",
+                "value": 36,
+                "relative": false,
+                "comparison": ">="
+              }
+            ],
+            "limits": []
+          }
+        ]
+      }
   auth: inherit
 
 settings:

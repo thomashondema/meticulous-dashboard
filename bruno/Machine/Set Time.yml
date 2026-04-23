@@ -9,6 +9,14 @@ http:
   headers:
     - name: Accept
       value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "date": "2026-04-23T13:05:00.000Z"
+      }
   auth: inherit
 
 settings:

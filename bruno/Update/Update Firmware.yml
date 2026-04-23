@@ -9,6 +9,10 @@ http:
   headers:
     - name: Accept
       value: application/json
+    - name: Content-Type
+      value: multipart/form-data
+  body:
+    firmware: "./firmware.bin"
   auth: inherit
 
 settings:

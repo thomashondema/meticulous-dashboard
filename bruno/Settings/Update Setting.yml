@@ -9,7 +9,15 @@ http:
   headers:
     - name: Accept
       value: application/json
-  body: {}
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "auto_preheat": 0,
+        "enable_sounds": true
+      }
   auth: inherit
 
 settings:

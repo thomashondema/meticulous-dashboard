@@ -11,7 +11,7 @@ http:
       value: application/json
   params:
     - name: theme
-      value: ""
+      value: "default"
       type: path
   auth: inherit
 
