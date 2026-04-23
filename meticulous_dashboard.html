@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meticulous Machine Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100" x-data="dashboardApp()">
+<main class="mx-auto max-w-6xl p-4 md:p-8">
+  <header class="mb-6 flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Meticulous Dashboard</h1>
+      <p class="text-sm text-slate-400">Single-file SPA using Tailwind, Alpine, and the Meticulous API library.</p>
+    </div>
+    <template x-if="connected">
+      <div class="flex gap-2">
+        <button @click="refreshAll" class="rounded-md bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Refresh</button>
+        <button @click="disconnect" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Disconnect</button>
+      </div>
+    </template>
+  </header>
+
+  <section x-show="!connected" class="mx-auto max-w-xl rounded-xl border border-slate-800 bg-slate-900 p-6">
+    <h2 class="mb-3 text-lg font-medium">Connect to machine</h2>
+    <p class="mb-4 text-sm text-slate-400">Enter the base URL (without <code>/api/v1</code> preferred), then connect.</p>
+    <label class="mb-3 block text-sm">
+      Base URL
+      <input
+        x-model="baseUrl"
+        type="text"
+        placeholder="http://192.168.0.242"
+        class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none ring-indigo-500 focus:ring"
+      />
+    </label>
+    <button
+      @click="connect"
+      :disabled="connecting || !baseUrl.trim()"
+      class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      <span x-show="!connecting">Connect</span>
+      <span x-show="connecting">Connecting...</span>
+    </button>
+    <p x-show="error" x-text="error" class="mt-3 text-sm text-rose-400"></p>
+  </section>
+
+  <section x-show="connected" x-cloak class="space-y-4">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <h3 class="text-sm text-slate-400">Machine</h3>
+        <p class="mt-1 text-lg font-medium" x-text="deviceInfo?.name || '-' "></p>
+        <p class="text-xs text-slate-400" x-text="deviceInfo?.hostname || '-' "></p>
+      </article>
+      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <h3 class="text-sm text-slate-400">Firmware / Image</h3>
+        <p class="mt-1 text-sm" x-text="deviceInfo?.firmware || '-' "></p>
+        <p class="text-xs text-slate-400" x-text="deviceInfo?.image_version || '-' "></p>
+      </article>
+      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <h3 class="text-sm text-slate-400">Profiles</h3>
+        <p class="mt-1 text-lg font-medium" x-text="Array.isArray(profiles) ? profiles.length : '-' "></p>
+        <p class="text-xs text-slate-400">Available on machine</p>
+      </article>
+      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <h3 class="text-sm text-slate-400">Last Shot</h3>
+        <p class="mt-1 text-sm" x-text="lastShot?.name || 'No shot found'"></p>
+        <p class="text-xs text-slate-400" x-text="formatShotTime(lastShot?.time)"></p>
+      </article>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <h3 class="mb-3 text-sm font-medium text-slate-300">Quick Actions</h3>
+        <div class="flex flex-wrap gap-2">
+          <button @click="runAction('start')" class="rounded-md bg-emerald-700 px-3 py-2 text-sm hover:bg-emerald-600">Start</button>
+          <button @click="runAction('stop')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Stop</button>
+          <button @click="runAction('reset')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Reset</button>
+          <button @click="runAction('abort')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Abort</button>
+          <button @click="runAction('continue')" class="rounded-md bg-blue-700 px-3 py-2 text-sm hover:bg-blue-600">Continue</button>
+          <button @click="runAction('tare')" class="rounded-md bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600">Tare</button>
+          <button @click="runAction('scale_master_calibration')" class="rounded-md bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600">Calibration</button>
+          <button @click="runAction('preheat')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Preheat</button>
+          <button @click="runAction('home')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Home</button>
+          <button @click="runAction('purge')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Purge</button>
+        </div>
+        <p x-show="actionMessage" class="mt-3 text-xs text-slate-300" x-text="actionMessage"></p>
+      </article>
+
+      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <h3 class="mb-3 text-sm font-medium text-slate-300">Current settings snapshot</h3>
+        <pre class="max-h-56 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-300" x-text="pretty(settings)"></pre>
+      </article>
+    </div>
+
+    <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <h3 class="mb-3 text-sm font-medium text-slate-300">Profiles (short list)</h3>
+      <div class="overflow-auto">
+        <table class="min-w-full text-left text-sm">
+          <thead class="text-slate-400">
+          <tr>
+            <th class="px-2 py-1">Name</th>
+            <th class="px-2 py-1">ID</th>
+          </tr>
+          </thead>
+          <tbody>
+          <template x-for="profile in profiles" :key="profile.id">
+            <tr class="border-t border-slate-800">
+              <td class="px-2 py-1" x-text="profile.name"></td>
+              <td class="px-2 py-1 font-mono text-xs text-slate-400" x-text="profile.id"></td>
+            </tr>
+          </template>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <p x-show="error" x-text="error" class="text-sm text-rose-400"></p>
+  </section>
+</main>
+
+<script>
+  function dashboardApp() {
+    return {
+      baseUrl: localStorage.getItem('meticulous.baseUrl') || '',
+      connected: false,
+      connecting: false,
+      error: '',
+      actionMessage: '',
+      api: null,
+      deviceInfo: null,
+      settings: null,
+      profiles: [],
+      lastShot: null,
+
+      normalizeBaseUrl(url) {
+        let value = (url || '').trim().replace(/\/+$/, '');
+        value = value.replace(/\/api\/v1$/i, '');
+        return value;
+      },
+
+      async loadApiClass() {
+        const rawUrl = 'https://raw.githubusercontent.com/MeticulousHome/meticulous-typescript-api/refs/heads/dist/dist/index.js';
+        const esmFromRaw = `https://esm.sh/${rawUrl}`;
+        const esmFromGh = 'https://esm.sh/gh/MeticulousHome/meticulous-typescript-api@dist/dist/index.js';
+
+        let mod;
+        try {
+          mod = await import(esmFromRaw);
+        } catch (_) {
+          mod = await import(esmFromGh);
+        }
+        return mod.default || mod;
+      },
+
+      async connect() {
+        this.error = '';
+        this.actionMessage = '';
+        this.connecting = true;
+        try {
+          const Api = await this.loadApiClass();
+          const normalized = this.normalizeBaseUrl(this.baseUrl);
+          this.api = new Api(undefined, normalized);
+          this.baseUrl = normalized;
+          localStorage.setItem('meticulous.baseUrl', normalized);
+          await this.refreshAll();
+          this.connected = true;
+        } catch (e) {
+          this.connected = false;
+          this.error = `Failed to connect: ${e?.message || e}`;
+        } finally {
+          this.connecting = false;
+        }
+      },
+
+      disconnect() {
+        if (this.api && typeof this.api.disconnectSocket === 'function') {
+          this.api.disconnectSocket();
+        }
+        this.api = null;
+        this.connected = false;
+        this.deviceInfo = null;
+        this.settings = null;
+        this.profiles = [];
+        this.lastShot = null;
+        this.actionMessage = '';
+        this.error = '';
+      },
+
+      async refreshAll() {
+        if (!this.api) return;
+        this.error = '';
+        const [device, settings, profiles, shot] = await Promise.allSettled([
+          this.api.getDeviceInfo(),
+          this.api.getSettings(),
+          this.api.listProfiles(),
+          this.api.getLastShot()
+        ]);
+
+        if (device.status === 'fulfilled') this.deviceInfo = device.value.data;
+        if (settings.status === 'fulfilled') this.settings = settings.value.data;
+        if (profiles.status === 'fulfilled') this.profiles = Array.isArray(profiles.value.data) ? profiles.value.data : [];
+        if (shot.status === 'fulfilled') this.lastShot = shot.value.data;
+
+        const failed = [device, settings, profiles, shot].filter(result => result.status === 'rejected');
+        if (failed.length) {
+          this.error = `Loaded with ${failed.length} warning(s). Some endpoints failed.`;
+        }
+      },
+
+      async runAction(action) {
+        if (!this.api) return;
+        this.actionMessage = '';
+        this.error = '';
+        try {
+          const res = await this.api.executeAction(action);
+          this.actionMessage = `Action '${action}' sent: ${JSON.stringify(res.data)}`;
+          await this.refreshAll();
+        } catch (e) {
+          this.error = `Action failed: ${e?.message || e}`;
+        }
+      },
+
+      pretty(value) {
+        if (value == null) return 'No data';
+        return JSON.stringify(value, null, 2);
+      },
+
+      formatShotTime(timestamp) {
+        if (!timestamp) return '-';
+        const d = new Date(timestamp * 1000);
+        if (Number.isNaN(d.getTime())) return '-';
+        return d.toLocaleString();
+      }
+    };
+  }
+</script>
+</body>
+</html>
