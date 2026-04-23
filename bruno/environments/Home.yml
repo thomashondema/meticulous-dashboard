@@ -1,0 +1,4 @@
+name: Home
+variables:
+  - name: BaseURL
+    value: http://192.168.0.242/api/v1
