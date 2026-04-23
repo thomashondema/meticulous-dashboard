@@ -81,51 +81,51 @@
   <section x-show="connected" x-cloak class="space-y-4">
     <div x-show="activeTab === 'overview'" class="space-y-4">
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h3 class="text-sm text-slate-400">Machine</h3>
-        <p class="mt-1 text-lg font-medium" x-text="deviceInfo?.name || '-' "></p>
-        <p class="text-xs text-slate-400" x-text="deviceInfo?.hostname || '-' "></p>
-      </article>
-      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h3 class="text-sm text-slate-400">Firmware / Image</h3>
-        <p class="mt-1 text-sm" x-text="deviceInfo?.firmware || '-' "></p>
-        <p class="text-xs text-slate-400" x-text="deviceInfo?.image_version || '-' "></p>
-      </article>
-      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h3 class="text-sm text-slate-400">Profiles</h3>
-        <p class="mt-1 text-lg font-medium" x-text="Array.isArray(profiles) ? profiles.length : '-' "></p>
-        <p class="text-xs text-slate-400">Available on machine</p>
-      </article>
-      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h3 class="text-sm text-slate-400">Last Shot</h3>
-        <p class="mt-1 text-sm" x-text="lastShot?.name || 'No shot found'"></p>
-        <p class="text-xs text-slate-400" x-text="formatShotTime(lastShot?.time)"></p>
-      </article>
-    </div>
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="text-sm text-slate-400">Machine</h3>
+          <p class="mt-1 text-lg font-medium" x-text="deviceInfo?.name || '-' "></p>
+          <p class="text-xs text-slate-400" x-text="deviceInfo?.hostname || '-' "></p>
+        </article>
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="text-sm text-slate-400">Firmware / Image</h3>
+          <p class="mt-1 text-sm" x-text="deviceInfo?.firmware || '-' "></p>
+          <p class="text-xs text-slate-400" x-text="deviceInfo?.image_version || '-' "></p>
+        </article>
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="text-sm text-slate-400">Profiles</h3>
+          <p class="mt-1 text-lg font-medium" x-text="Array.isArray(profiles) ? profiles.length : '-' "></p>
+          <p class="text-xs text-slate-400">Available on machine</p>
+        </article>
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="text-sm text-slate-400">Last Shot</h3>
+          <p class="mt-1 text-sm" x-text="lastShot?.name || 'No shot found'"></p>
+          <p class="text-xs text-slate-400" x-text="formatShotTime(lastShot?.time)"></p>
+        </article>
+      </div>
 
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h3 class="mb-3 text-sm font-medium text-slate-300">Quick Actions</h3>
-        <div class="flex flex-wrap gap-2">
-          <button @click="runAction('start')" class="rounded-md bg-emerald-700 px-3 py-2 text-sm hover:bg-emerald-600">Start</button>
-          <button @click="runAction('stop')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Stop</button>
-          <button @click="runAction('reset')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Reset</button>
-          <button @click="runAction('abort')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Abort</button>
-          <button @click="runAction('continue')" class="rounded-md bg-blue-700 px-3 py-2 text-sm hover:bg-blue-600">Continue</button>
-          <button @click="runAction('tare')" class="rounded-md bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600">Tare</button>
-          <button @click="runAction('scale_master_calibration')" class="rounded-md bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600">Calibration</button>
-          <button @click="runAction('preheat')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Preheat</button>
-          <button @click="runAction('home')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Home</button>
-          <button @click="runAction('purge')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Purge</button>
-        </div>
-        <p x-show="actionMessage" class="mt-3 text-xs text-slate-300" x-text="actionMessage"></p>
-      </article>
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="mb-3 text-sm font-medium text-slate-300">Quick Actions</h3>
+          <div class="flex flex-wrap gap-2">
+            <button @click="runAction('start')" class="rounded-md bg-emerald-700 px-3 py-2 text-sm hover:bg-emerald-600">Start</button>
+            <button @click="runAction('stop')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Stop</button>
+            <button @click="runAction('reset')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Reset</button>
+            <button @click="runAction('abort')" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Abort</button>
+            <button @click="runAction('continue')" class="rounded-md bg-blue-700 px-3 py-2 text-sm hover:bg-blue-600">Continue</button>
+            <button @click="runAction('tare')" class="rounded-md bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600">Tare</button>
+            <button @click="runAction('scale_master_calibration')" class="rounded-md bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600">Calibration</button>
+            <button @click="runAction('preheat')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Preheat</button>
+            <button @click="runAction('home')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Home</button>
+            <button @click="runAction('purge')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Purge</button>
+          </div>
+          <p x-show="actionMessage" class="mt-3 text-xs text-slate-300" x-text="actionMessage"></p>
+        </article>
 
-      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h3 class="mb-3 text-sm font-medium text-slate-300">Current settings snapshot</h3>
-        <pre class="max-h-56 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-300" x-text="pretty(settings)"></pre>
-      </article>
-    </div>
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="mb-3 text-sm font-medium text-slate-300">Current settings snapshot</h3>
+          <pre class="max-h-56 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-300" x-text="pretty(settings)"></pre>
+        </article>
+      </div>
 
       <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
         <h3 class="mb-3 text-sm font-medium text-slate-300">Profiles (short list)</h3>
@@ -135,6 +135,7 @@
             <tr>
               <th class="px-2 py-1">Name</th>
               <th class="px-2 py-1">ID</th>
+              <th class="px-2 py-1">Actions</th>
             </tr>
             </thead>
             <tbody>
@@ -142,6 +143,7 @@
               <tr class="border-t border-slate-800">
                 <td class="px-2 py-1" x-text="profile.name"></td>
                 <td class="px-2 py-1 font-mono text-xs text-slate-400" x-text="profile.id"></td>
+                <td class="px-2 py-1"><button @click="runProfile(profile.id)" class="rounded bg-indigo-700 px-2 py-1 text-[10px] hover:bg-indigo-600 transition">Run profile</button></td>
               </tr>
             </template>
             </tbody>
@@ -229,6 +231,8 @@
           </template>
         </article>
       </div>
+    </div>
+
     <div x-show="activeTab === 'notifications'" class="space-y-6">
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-semibold">Notifications</h2>
@@ -251,8 +255,8 @@
                       <p class="mt-1 text-sm text-slate-200" x-text="n.message"></p>
                     </div>
                     <button
-                      @click="acknowledgeNotification(n.id)"
-                      class="shrink-0 rounded bg-indigo-600/20 px-3 py-1 text-xs font-medium text-indigo-400 hover:bg-indigo-600 hover:text-white transition"
+                            @click="acknowledgeNotification(n.id)"
+                            class="shrink-0 rounded bg-indigo-600/20 px-3 py-1 text-xs font-medium text-indigo-400 hover:bg-indigo-600 hover:text-white transition"
                     >
                       Acknowledge
                     </button>
@@ -287,9 +291,6 @@
         </section>
       </div>
     </div>
-
-    </div>
-
     <div x-show="activeTab === 'profiles'" class="space-y-4">
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-semibold">Profile Management</h2>
@@ -316,6 +317,7 @@
               <p class="mb-4 font-mono text-[10px] text-slate-500" x-text="p.id"></p>
               <div class="flex gap-2">
                 <button @click="editProfile(p)" class="flex-1 rounded bg-slate-800 py-1.5 text-xs hover:bg-slate-700">Edit</button>
+                <button @click="runProfile(p.id)" class="flex-1 rounded bg-indigo-600 py-1.5 text-xs hover:bg-indigo-500">Run</button>
                 <button @click="deleteProfile(p.id)" class="rounded bg-rose-900/50 px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-900">Delete</button>
               </div>
             </article>
@@ -682,6 +684,19 @@
         }
       },
 
+      async runProfile(id) {
+        if (!this.api) return;
+        this.actionMessage = '';
+        this.error = '';
+        try {
+          await this.api.loadProfileByID(id);
+          this.actionMessage = `Profile ${id} loaded and started.`;
+          await this.refreshAll();
+        } catch (e) {
+          this.error = `Failed to run profile: ${e?.message || e}`;
+        }
+      },
+
       async fetchHistory() {
         if (!this.api) return;
         try {
@@ -726,40 +741,54 @@
           this.chart.destroy();
         }
 
-        // Assuming data is an array of objects with time, pressure, flow, temperature
-        // Let's check common keys in Meticulous data: time, pressure, flow, temp (or similar)
-        const labels = data.map(d => (d.time || 0).toFixed(1));
+        // Assuming data is an array of objects with time (ms), pressure, flow, weight
+        // Convert time from ms to s
+        const labels = data.map(d => ((d.time || 0) / 1000).toFixed(1));
         const datasets = [];
 
         if (data.length > 0) {
           const first = data[0];
-          if ('pressure' in first) {
+          if (first.shot && 'pressure' in first.shot) {
             datasets.push({
               label: 'Pressure (bar)',
-              data: data.map(d => d.pressure),
+              data: data.map(d => d.shot?.pressure),
               borderColor: 'rgb(244, 63, 94)', // rose-500
               backgroundColor: 'rgba(244, 63, 94, 0.5)',
               yAxisID: 'y',
+              pointStyle: false,
               tension: 0.1
             });
           }
-          if ('flow' in first) {
+          if (first.shot && 'flow' in first.shot) {
             datasets.push({
               label: 'Flow (ml/s)',
-              data: data.map(d => d.flow),
+              data: data.map(d => d.shot?.flow),
               borderColor: 'rgb(56, 189, 248)', // sky-400
               backgroundColor: 'rgba(56, 189, 248, 0.5)',
               yAxisID: 'y1',
+              pointStyle: false,
               tension: 0.1
             });
           }
-          if ('temperature' in first || 'temp' in first) {
+          if (first.shot && 'gravimetric_flow' in first.shot) {
             datasets.push({
-              label: 'Temp (°C)',
-              data: data.map(d => d.temperature || d.temp),
-              borderColor: 'rgb(251, 191, 36)', // amber-400
-              backgroundColor: 'rgba(251, 191, 36, 0.5)',
+              label: 'Grav. Flow (ml/s)',
+              data: data.map(d => d.shot?.gravimetric_flow),
+              borderColor: 'rgb(34, 211, 238)', // cyan-400
+              backgroundColor: 'rgba(34, 211, 238, 0.5)',
+              yAxisID: 'y1',
+              pointStyle: false,
+              tension: 0.1
+            });
+          }
+          if (first.shot && 'weight' in first.shot) {
+            datasets.push({
+              label: 'Weight (g)',
+              data: data.map(d => d.shot?.weight),
+              borderColor: 'rgb(168, 85, 247)', // purple-500
+              backgroundColor: 'rgba(168, 85, 247, 0.5)',
               yAxisID: 'y2',
+              pointStyle: false,
               tension: 0.1
             });
           }
@@ -806,8 +835,8 @@
                 display: true,
                 position: 'right',
                 offset: true,
-                title: { display: true, text: 'Temp', color: 'rgb(251, 191, 36)' },
-                ticks: { color: 'rgb(251, 191, 36)' },
+                title: { display: true, text: 'Weight (g)', color: 'rgb(168, 85, 247)' },
+                ticks: { color: 'rgb(168, 85, 247)' },
                 grid: { drawOnChartArea: false }
               }
             },
