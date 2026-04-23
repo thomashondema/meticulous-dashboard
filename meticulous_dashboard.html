@@ -168,7 +168,7 @@
                   <span
                     class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
                     :class="shot.rating === 'like' ? 'bg-emerald-500/20 text-emerald-400' : shot.rating === 'dislike' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700 text-slate-400'"
-                    x-text="shot.rating || 'none'"
+                    x-text="shot.rating || 'unrated'"
                   ></span>
                 </div>
                 <p class="mt-1 text-xs text-slate-400" x-text="formatShotTime(shot.time)"></p>
@@ -189,7 +189,17 @@
                 </div>
                 <div class="rounded-md bg-slate-950 p-3">
                   <p class="text-[10px] uppercase text-slate-500">Rating</p>
-                  <p class="text-xs" x-text="selectedShot.rating || 'Unrated'"></p>
+                  <div class="flex items-center gap-2">
+                    <p class="text-xs" x-text="selectedShot.rating || 'Unrated'"></p>
+                    <div class="flex gap-1 ml-auto">
+                      <button @click="rateShot(selectedShot, 'like')" class="hover:scale-110 transition opacity-70 hover:opacity-100" title="Like">
+                        <span :class="selectedShot.rating === 'like' ? 'grayscale-0' : 'grayscale'">😊</span>
+                      </button>
+                      <button @click="rateShot(selectedShot, 'dislike')" class="hover:scale-110 transition opacity-70 hover:opacity-100" title="Dislike">
+                        <span :class="selectedShot.rating === 'dislike' ? 'grayscale-0' : 'grayscale'">☹️</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div class="rounded-md bg-slate-950 p-3">
                   <p class="text-[10px] uppercase text-slate-500">DB Key</p>
@@ -730,6 +740,28 @@
           }
         } catch (e) {
           this.error = `Failed to fetch shot data: ${e?.message || e}`;
+        }
+      },
+
+      async rateShot(shot, rating) {
+        if (!this.api || !shot) return;
+        try {
+          // If clicking the same rating, we might want to toggle it to null?
+          // But the requirement just says "add happy and sad face to change the rating"
+          const newRating = shot.rating === rating ? null : rating;
+          await this.api.rateShot(shot.id, newRating);
+
+          // Update local state
+          shot.rating = newRating;
+          if (this.selectedShot && this.selectedShot.id === shot.id) {
+            this.selectedShot.rating = newRating;
+          }
+          const idx = this.history.findIndex(s => s.id === shot.id);
+          if (idx !== -1) {
+            this.history[idx].rating = newRating;
+          }
+        } catch (e) {
+          this.error = `Failed to rate shot: ${e?.message || e}`;
         }
       },
 
