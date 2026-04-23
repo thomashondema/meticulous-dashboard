@@ -671,7 +671,16 @@
         if (device.status === 'fulfilled') this.deviceInfo = device.value.data;
         if (settings.status === 'fulfilled') this.settings = settings.value.data;
         if (profiles.status === 'fulfilled') this.profiles = Array.isArray(profiles.value.data) ? profiles.value.data : [];
-        if (shot.status === 'fulfilled') this.lastShot = shot.value.data;
+        if (shot.status === 'fulfilled') {
+          this.lastShot = shot.value.data;
+          if (this.lastShot && this.lastShot.id) {
+            this.api.getShotRating(this.lastShot.id).then(res => {
+              if (res.data && 'rating' in res.data) {
+                this.lastShot.rating = res.data.rating;
+              }
+            }).catch(() => {});
+          }
+        }
         if (active.status === 'fulfilled') this.activeNotifications = Array.isArray(active.value.data) ? active.value.data : [];
         if (acknowledged.status === 'fulfilled') this.acknowledgedNotifications = Array.isArray(acknowledged.value.data) ? acknowledged.value.data : [];
 
@@ -712,6 +721,14 @@
         try {
           const res = await this.api.getHistoryShortListing();
           this.history = res.data.history || [];
+          // Fetch ratings for each shot in history
+          this.history.forEach(shot => {
+            this.api.getShotRating(shot.id).then(ratingRes => {
+              if (ratingRes.data && 'rating' in ratingRes.data) {
+                shot.rating = ratingRes.data.rating;
+              }
+            }).catch(() => {});
+          });
         } catch (e) {
           this.error = `Failed to fetch history: ${e?.message || e}`;
         }
@@ -719,6 +736,16 @@
 
       async viewShot(shot) {
         this.selectedShot = shot;
+        if (!shot.rating && this.api) {
+          this.api.getShotRating(shot.id).then(res => {
+            if (res.data && 'rating' in res.data) {
+              shot.rating = res.data.rating;
+              if (this.selectedShot && this.selectedShot.id === shot.id) {
+                this.selectedShot.rating = res.data.rating;
+              }
+            }
+          }).catch(() => {});
+        }
         if (shot.data) {
           this.$nextTick(() => this.renderChart(shot.data));
         }
@@ -736,6 +763,14 @@
               this.history[idx] = fullShot;
             }
             this.selectedShot = fullShot;
+            this.api.getShotRating(fullShot.id).then(ratingRes => {
+              if (ratingRes.data && 'rating' in ratingRes.data) {
+                fullShot.rating = ratingRes.data.rating;
+                if (this.selectedShot && this.selectedShot.id === fullShot.id) {
+                  this.selectedShot.rating = ratingRes.data.rating;
+                }
+              }
+            }).catch(() => {});
             this.$nextTick(() => this.renderChart(fullShot.data));
           }
         } catch (e) {
