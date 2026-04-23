@@ -1,0 +1,22 @@
+info:
+  name: Play Sound
+  type: http
+  seq: 1
+
+http:
+  method: get
+  url: "{{BaseURL}}/sounds/play/:sound"
+  headers:
+    - name: Accept
+      value: application/json
+  params:
+    - name: sound
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

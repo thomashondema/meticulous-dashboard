@@ -1,0 +1,19 @@
+info:
+  name: Search History
+  type: http
+  seq: 2
+
+http:
+  method: post
+  url: "{{BaseURL}}/history"
+  headers:
+    - name: Accept
+      value: application/json
+  body: {}
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

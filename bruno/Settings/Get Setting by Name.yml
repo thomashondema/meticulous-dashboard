@@ -1,0 +1,22 @@
+info:
+  name: Get Setting by Name
+  type: http
+  seq: 2
+
+http:
+  method: get
+  url: "{{BaseURL}}/settings/:settingName"
+  headers:
+    - name: Accept
+      value: application/json
+  params:
+    - name: settingName
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

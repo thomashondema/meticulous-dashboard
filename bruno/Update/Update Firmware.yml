@@ -1,0 +1,18 @@
+info:
+  name: Update Firmware
+  type: http
+  seq: 1
+
+http:
+  method: post
+  url: "{{BaseURL}}/update/firmware"
+  headers:
+    - name: Accept
+      value: application/json
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

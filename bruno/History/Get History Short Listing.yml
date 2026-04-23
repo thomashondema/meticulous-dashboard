@@ -1,0 +1,18 @@
+info:
+  name: Get History Short Listing
+  type: http
+  seq: 1
+
+http:
+  method: get
+  url: "{{BaseURL}}/history"
+  headers:
+    - name: Accept
+      value: application/json
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,22 @@
+info:
+  name: Rate Shot
+  type: http
+  seq: 7
+
+http:
+  method: post
+  url: "{{BaseURL}}/history/rating/:shotId"
+  headers:
+    - name: Accept
+      value: application/json
+  params:
+    - name: shotId
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

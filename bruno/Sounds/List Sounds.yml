@@ -1,0 +1,18 @@
+info:
+  name: List Sounds
+  type: http
+  seq: 2
+
+http:
+  method: get
+  url: "{{BaseURL}}/sounds/list"
+  headers:
+    - name: Accept
+      value: application/json
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,22 @@
+info:
+  name: Search Historical Profiles
+  type: http
+  seq: 4
+
+http:
+  method: get
+  url: "{{BaseURL}}/history/search?query="
+  headers:
+    - name: Accept
+      value: application/json
+  params:
+    - name: query
+      value: ""
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

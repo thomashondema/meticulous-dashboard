@@ -1,0 +1,18 @@
+info:
+  name: Get Last Profile
+  type: http
+  seq: 9
+
+http:
+  method: get
+  url: "{{BaseURL}}/profile/last"
+  headers:
+    - name: Accept
+      value: application/json
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

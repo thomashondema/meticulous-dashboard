@@ -1,0 +1,22 @@
+info:
+  name: Execute Action
+  type: http
+  seq: 1
+
+http:
+  method: get
+  url: "{{BaseURL}}/action/:action"
+  headers:
+    - name: Accept
+      value: application/json
+  params:
+    - name: action
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

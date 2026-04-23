@@ -1,0 +1,18 @@
+info:
+  name: Get OS Update Status
+  type: http
+  seq: 3
+
+http:
+  method: get
+  url: "{{BaseURL}}/machine/OS_update_status"
+  headers:
+    - name: Accept
+      value: application/json
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

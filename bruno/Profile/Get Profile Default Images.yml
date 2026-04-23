@@ -1,0 +1,18 @@
+info:
+  name: Get Profile Default Images
+  type: http
+  seq: 10
+
+http:
+  method: get
+  url: "{{BaseURL}}/profile/image"
+  headers:
+    - name: Accept
+      value: application/json
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

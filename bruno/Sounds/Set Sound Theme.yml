@@ -1,0 +1,22 @@
+info:
+  name: Set Sound Theme
+  type: http
+  seq: 5
+
+http:
+  method: post
+  url: "{{BaseURL}}/sounds/theme/set/:theme"
+  headers:
+    - name: Accept
+      value: application/json
+  params:
+    - name: theme
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

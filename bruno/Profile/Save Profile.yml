@@ -1,0 +1,19 @@
+info:
+  name: Save Profile
+  type: http
+  seq: 4
+
+http:
+  method: post
+  url: "{{BaseURL}}/profile/save"
+  headers:
+    - name: Accept
+      value: application/json
+  body: {}
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

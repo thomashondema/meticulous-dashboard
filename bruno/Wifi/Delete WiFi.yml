@@ -1,0 +1,19 @@
+info:
+  name: Delete WiFi
+  type: http
+  seq: 6
+
+http:
+  method: post
+  url: "{{BaseURL}}/wifi/delete"
+  headers:
+    - name: Accept
+      value: application/json
+  body: {}
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

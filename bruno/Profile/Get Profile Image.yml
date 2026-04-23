@@ -1,0 +1,22 @@
+info:
+  name: Get Profile Image
+  type: http
+  seq: 11
+
+http:
+  method: get
+  url: "{{BaseURL}}/profile/image/:image"
+  headers:
+    - name: Accept
+      value: application/json
+  params:
+    - name: image
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
