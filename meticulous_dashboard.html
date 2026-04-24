@@ -219,7 +219,15 @@
               </div>
               <template x-if="selectedShot.data">
                 <div>
-                  <p class="mb-2 text-xs font-medium text-slate-400">Shot Visualization</p>
+                  <div class="mb-2 flex items-center justify-between">
+                    <p class="text-xs font-medium text-slate-400">Shot Visualization</p>
+                    <button
+                      @click="exportChartAsImage"
+                      class="rounded bg-slate-800 px-2 py-1 text-[10px] font-medium text-slate-300 hover:bg-slate-700"
+                    >
+                      Export as Image
+                    </button>
+                  </div>
                   <div class="mb-4 h-64 w-full rounded-md bg-slate-950 p-2">
                     <canvas id="shotChart"></canvas>
                   </div>
@@ -797,6 +805,14 @@
         } catch (e) {
           this.error = `Failed to rate shot: ${e?.message || e}`;
         }
+      },
+
+      exportChartAsImage() {
+        if (!this.chart) return;
+        const link = document.createElement('a');
+        link.download = `shot-${this.selectedShot.id || 'export'}.png`;
+        link.href = this.chart.toBase64Image();
+        link.click();
       },
 
       renderChart(data) {
