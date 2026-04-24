@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-dragdata@2.2.3/dist/chartjs-plugin-dragdata.min.js"></script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100" x-data="dashboardApp()">
 <main class="mx-auto max-w-6xl p-4 md:p-8">
@@ -460,7 +461,7 @@
                     <div class="space-y-2 lg:col-span-3">
                       <div class="flex items-center justify-between">
                         <span class="text-[10px] font-bold uppercase text-slate-600">Dynamics Chart</span>
-                        <span class="text-[10px] text-slate-500">Click to add points</span>
+                        <span class="text-[10px] text-slate-500">Click to add, drag to move points</span>
                       </div>
                       <div class="h-48 w-full rounded border border-slate-800 bg-slate-900/50 p-2" x-init="initStageChart($el, s)">
                         <canvas></canvas>
@@ -609,9 +610,19 @@
               }
             },
             plugins: {
-              legend: { display: false }
+              legend: { display: false },
+              dragData: {
+                dragX: true,
+                onDragEnd: (e, datasetIndex, index, value) => {
+                  stage.dynamics.points[index] = [value.x.toFixed(2), value.y.toFixed(2)];
+                  stage.dynamics.points.sort((a, b) => Number(a[0]) - Number(b[0]));
+                }
+              }
             },
             onClick: (e) => {
+              // Only add point if not dragging
+              if (chart.getActiveElements().length > 0) return;
+              
               const canvasPosition = Chart.helpers.getRelativePosition(e, chart);
               const dataX = chart.scales.x.getValueForPixel(canvasPosition.x);
               const dataY = chart.scales.y.getValueForPixel(canvasPosition.y);
