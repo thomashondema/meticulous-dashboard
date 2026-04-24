@@ -359,7 +359,7 @@
             </label>
             <label class="block text-sm">
               Accent Color
-              <input x-model="editingProfile.display.accentColor" type="text" class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500" />
+              <input x-model="editingProfile.display.accentColor" type="text" placeholder="#RRGGBB" pattern="^#[0-9A-Fa-f]{6}$" class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500" />
             </label>
             <label class="block text-sm">
               Temperature (°C)
@@ -440,6 +440,7 @@
                     <label class="text-[10px] uppercase text-slate-500">
                       Interpolation
                       <select x-model="s.dynamics.interpolation" class="mt-1 w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs">
+                        <option value="none">none</option>
                         <option value="linear">linear</option>
                         <option value="curve">curve</option>
                       </select>
@@ -473,23 +474,20 @@
                           <div class="rounded border border-slate-800 bg-slate-900 p-2 text-[10px]">
                             <div class="mb-1 flex justify-between">
                               <select x-model="t.type" class="bg-transparent outline-none">
-                                <option value="time">time</option>
                                 <option value="weight">weight</option>
                                 <option value="pressure">pressure</option>
                                 <option value="flow">flow</option>
+                                <option value="time">time</option>
                                 <option value="piston_position">piston_position</option>
-                                <option value="temperature">temperature</option>
                                 <option value="power">power</option>
+                                <option value="user_interaction">user_interaction</option>
                               </select>
                               <button @click="s.exit_triggers.splice(tIdx, 1)" class="text-rose-500">Remove</button>
                             </div>
                             <div class="flex gap-1">
                               <select x-model="t.comparison" class="w-1/3 rounded border border-slate-700 bg-slate-800 px-1 py-0.5">
                                 <option value=">=">>=</option>
-                                <option value=">">></option>
                                 <option value="<="><=</option>
-                                <option value="<"><</option>
-                                <option value="==">==</option>
                               </select>
                               <input x-model="t.value" type="text" class="w-1/3 rounded border border-slate-700 bg-slate-800 px-1 py-0.5" />
                               <select x-model="t.relative" class="w-1/3 rounded border border-slate-700 bg-slate-800 px-1 py-0.5">
@@ -513,8 +511,6 @@
                             <select x-model="l.type" class="w-1/2 rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]">
                               <option value="pressure">pressure</option>
                               <option value="flow">flow</option>
-                              <option value="power">power</option>
-                              <option value="temperature">temperature</option>
                             </select>
                             <input x-model="l.value" type="text" class="w-1/2 rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
                             <button @click="s.limits.splice(lIdx, 1)" class="text-rose-500 px-1">×</button>
@@ -943,7 +939,7 @@
           name: 'New Profile',
           id: this.uuid(),
           author: 'meticulous',
-          author_id: '',
+          author_id: this.uuid(),
           previous_authors: [],
           display: {
             accentColor: '#2E6F40'
