@@ -457,6 +457,16 @@
                   </div>
 
                   <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div class="space-y-2 lg:col-span-3">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase text-slate-600">Dynamics Chart</span>
+                        <span class="text-[10px] text-slate-500">Click to add points</span>
+                      </div>
+                      <div class="h-48 w-full rounded border border-slate-800 bg-slate-900/50 p-2" x-init="initStageChart($el, s)">
+                        <canvas></canvas>
+                      </div>
+                    </div>
+
                     <div class="space-y-2">
                       <div class="flex items-center justify-between">
                         <span class="text-[10px] font-bold uppercase text-slate-600">Points</span>
@@ -562,6 +572,77 @@
       fullProfiles: [],
       editingProfile: null,
       chart: null,
+      stageCharts: new Map(),
+
+      initStageChart(container, stage) {
+        const canvas = container.querySelector('canvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        
+        const chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            datasets: [{
+              label: stage.type,
+              data: stage.dynamics.points.map(p => ({ x: Number(p[0]), y: Number(p[1]) })),
+              borderColor: 'rgb(99, 102, 241)', // indigo-500
+              backgroundColor: 'rgba(99, 102, 241, 0.5)',
+              tension: stage.dynamics.interpolation === 'curve' ? 0.4 : (stage.dynamics.interpolation === 'linear' ? 0 : 0),
+              stepped: stage.dynamics.interpolation === 'none'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                type: 'linear',
+                title: { display: true, text: 'Time (s)', color: '#94a3b8' },
+                ticks: { color: '#94a3b8' },
+                grid: { color: '#334155' }
+              },
+              y: {
+                title: { display: true, text: stage.type.charAt(0).toUpperCase() + stage.type.slice(1), color: '#94a3b8' },
+                ticks: { color: '#94a3b8' },
+                grid: { color: '#334155' }
+              }
+            },
+            plugins: {
+              legend: { display: false }
+            },
+            onClick: (e) => {
+              const canvasPosition = Chart.helpers.getRelativePosition(e, chart);
+              const dataX = chart.scales.x.getValueForPixel(canvasPosition.x);
+              const dataY = chart.scales.y.getValueForPixel(canvasPosition.y);
+              
+              if (dataX !== undefined && dataY !== undefined) {
+                stage.dynamics.points.push([dataX.toFixed(2), dataY.toFixed(2)]);
+                stage.dynamics.points.sort((a, b) => Number(a[0]) - Number(b[0]));
+              }
+            }
+          }
+        });
+
+        this.stageCharts.set(stage, chart);
+
+        this.$watch(() => JSON.stringify(stage.dynamics.points), () => {
+          chart.data.datasets[0].data = stage.dynamics.points.map(p => ({ x: Number(p[0]), y: Number(p[1]) }));
+          chart.update('none');
+        });
+
+        this.$watch(() => stage.type, (newType) => {
+          chart.data.datasets[0].label = newType;
+          chart.options.scales.y.title.text = newType.charAt(0).toUpperCase() + newType.slice(1);
+          chart.update();
+        });
+
+        this.$watch(() => stage.dynamics.interpolation, (newInterp) => {
+          chart.data.datasets[0].tension = newInterp === 'curve' ? 0.4 : (newInterp === 'linear' ? 0 : 0);
+          chart.data.datasets[0].stepped = newInterp === 'none';
+          chart.update();
+        });
+      },
 
       uuid() {
         if (window.crypto && typeof window.crypto.randomUUID === 'function') {
