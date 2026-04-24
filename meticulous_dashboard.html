@@ -397,7 +397,7 @@
                       <option value="time">time</option>
                       <option value="weight">weight</option>
                     </select>
-                    <input x-model="v.value" type="text" placeholder="Value" class="rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs" />
+                    <input x-model.number="v.value" type="text" placeholder="Value" class="rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs" />
                   </div>
                 </div>
               </template>
@@ -455,8 +455,8 @@
                       <div class="space-y-1">
                         <template x-for="(p, pIdx) in s.dynamics.points" :key="pIdx">
                           <div class="flex gap-1">
-                            <input x-model="p[0]" type="text" placeholder="X" class="w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
-                            <input x-model="p[1]" type="text" placeholder="Y" class="w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
+                            <input x-model.number="p[0]" type="text" placeholder="X" class="w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
+                            <input x-model.number="p[1]" type="text" placeholder="Y" class="w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
                             <button @click="s.dynamics.points.splice(pIdx, 1)" class="text-rose-500 px-1">×</button>
                           </div>
                         </template>
