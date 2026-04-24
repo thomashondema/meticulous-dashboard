@@ -432,7 +432,7 @@
                     </label>
                     <label class="text-[10px] uppercase text-slate-500">
                       Type
-                      <select x-model="s.type" class="mt-1 w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs">
+                      <select x-model="s.type" @change="s.limits[0] ? s.limits[0].type = (s.type === 'pressure' ? 'flow' : 'pressure') : null" class="mt-1 w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs">
                         <option value="flow">flow</option>
                         <option value="power">power</option>
                         <option value="pressure">pressure</option>
@@ -511,18 +511,13 @@
 
                     <div class="space-y-2">
                       <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold uppercase text-slate-600">Limits</span>
-                        <button @click="s.limits.push({type:'pressure',value:'1.0'})" class="text-[10px] text-indigo-400">+ Add</button>
+                        <span class="text-[10px] font-bold uppercase text-slate-600">Limit</span>
                       </div>
                       <div class="space-y-1">
                         <template x-for="(l, lIdx) in s.limits" :key="lIdx">
                           <div class="flex gap-1">
-                            <select x-model="l.type" class="w-1/2 rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]">
-                              <option value="pressure">pressure</option>
-                              <option value="flow">flow</option>
-                            </select>
-                            <input x-model="l.value" type="text" class="w-1/2 rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
-                            <button @click="s.limits.splice(lIdx, 1)" class="text-rose-500 px-1">×</button>
+                            <div class="w-full rounded border border-slate-800 bg-slate-800 px-2 py-1 text-[10px] text-slate-400 flex items-center" x-text="l.type"></div>
+                            <input x-model="l.value" type="text" class="w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-[10px]" />
                           </div>
                         </template>
                       </div>
@@ -974,7 +969,7 @@
               interpolation: 'linear'
             },
             exit_triggers: [{ type: 'time', value: '10', comparison: '>=', relative: true }],
-            limits: []
+            limits: [{ type: 'pressure', value: '1.0' }]
           }]
         };
       },
@@ -985,23 +980,41 @@
 
       addStage() {
         const idx = this.editingProfile.stages.length + 1;
+        const type = 'flow';
         this.editingProfile.stages.push({
           name: `Stage ${idx}`,
           key: `stage_${idx}`,
-          type: 'flow',
+          type: type,
           dynamics: {
             points: [['0', '4']],
             over: 'time',
             interpolation: 'linear'
           },
           exit_triggers: [{ type: 'time', value: '10', comparison: '>=', relative: true }],
-          limits: []
+          limits: [{ type: type === 'pressure' ? 'flow' : 'pressure', value: '1.0' }]
         });
       },
 
       async editProfile(profile) {
         // Clone to avoid direct mutation
-        this.editingProfile = JSON.parse(JSON.stringify(profile));
+        const cloned = JSON.parse(JSON.stringify(profile));
+        
+        // Ensure every stage has exactly one limit
+        if (cloned.stages && Array.isArray(cloned.stages)) {
+          cloned.stages.forEach(s => {
+            const expectedLimitType = s.type === 'pressure' ? 'flow' : 'pressure';
+            if (!s.limits || !Array.isArray(s.limits) || s.limits.length === 0) {
+              s.limits = [{ type: expectedLimitType, value: '1.0' }];
+            } else if (s.limits.length > 1) {
+              s.limits = [s.limits[0]];
+              s.limits[0].type = expectedLimitType;
+            } else {
+              s.limits[0].type = expectedLimitType;
+            }
+          });
+        }
+        
+        this.editingProfile = cloned;
       },
 
       async deleteProfile(id) {
@@ -1018,6 +1031,19 @@
       async saveProfile() {
         if (!this.api || !this.editingProfile) return;
         try {
+          // Ensure every stage has exactly one limit before saving
+          if (this.editingProfile.stages && Array.isArray(this.editingProfile.stages)) {
+            this.editingProfile.stages.forEach(s => {
+              const expectedLimitType = s.type === 'pressure' ? 'flow' : 'pressure';
+              if (!s.limits || !Array.isArray(s.limits) || s.limits.length === 0) {
+                s.limits = [{ type: expectedLimitType, value: '1.0' }];
+              } else if (s.limits.length > 1) {
+                s.limits = [s.limits[0]];
+              }
+              s.limits[0].type = expectedLimitType;
+            });
+          }
+
           const profileToSave = this.deepParse(this.editingProfile);
           await this.api.saveProfile(profileToSave);
           this.editingProfile = null;
@@ -1038,6 +1064,20 @@
             const profile = JSON.parse(e.target.result);
             // Ensure ID is unique if importing as new, or keep if overwriting?
             // Usually we want to edit it first.
+            
+            // Ensure every stage has exactly one limit
+            if (profile.stages && Array.isArray(profile.stages)) {
+              profile.stages.forEach(s => {
+                const expectedLimitType = s.type === 'pressure' ? 'flow' : 'pressure';
+                if (!s.limits || !Array.isArray(s.limits) || s.limits.length === 0) {
+                  s.limits = [{ type: expectedLimitType, value: '1.0' }];
+                } else if (s.limits.length > 1) {
+                  s.limits = [s.limits[0]];
+                }
+                s.limits[0].type = expectedLimitType;
+              });
+            }
+
             this.editingProfile = profile;
             if (!this.editingProfile.id) this.editingProfile.id = this.uuid();
             event.target.value = ''; // Reset input
