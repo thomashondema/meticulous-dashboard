@@ -910,6 +910,15 @@
             plugins: {
               legend: {
                 labels: { color: '#f1f5f9' }
+              },
+              tooltip: {
+                callbacks: {
+                  afterBody: (context) => {
+                    const dataIndex = context[0].dataIndex;
+                    const status = data[dataIndex].status;
+                    return status ? `Stage: ${status}` : '';
+                  }
+                }
               }
             }
           }
