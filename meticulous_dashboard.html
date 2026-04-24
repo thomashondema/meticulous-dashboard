@@ -63,7 +63,7 @@
       <input
         x-model="baseUrl"
         type="text"
-        placeholder="http://192.168.0.242"
+        placeholder="http://meticulousmellowespressobar/"
         class="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none ring-indigo-500 focus:ring"
       />
     </label>
@@ -84,7 +84,10 @@
         <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
           <h3 class="text-sm text-slate-400">Machine</h3>
           <p class="mt-1 text-lg font-medium" x-text="deviceInfo?.name || '-' "></p>
-          <p class="text-xs text-slate-400" x-text="deviceInfo?.hostname || '-' "></p>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs text-slate-400" x-text="deviceInfo?.hostname || '-' "></p>
+            <p class="text-[10px] font-mono text-indigo-400" x-show="unlockCode !== '-'" x-text="'Unlock: ' + unlockCode"></p>
+          </div>
         </article>
         <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
           <h3 class="text-sm text-slate-400">Firmware / Image</h3>
@@ -1066,6 +1069,13 @@
         const d = new Date(timestamp * 1000);
         if (Number.isNaN(d.getTime())) return '-';
         return d.toLocaleString();
+      },
+
+      get unlockCode() {
+        if (!this.deviceInfo || !this.deviceInfo.serial) return '-';
+        const serial = parseInt(this.deviceInfo.serial, 10);
+        if (isNaN(serial)) return '-';
+        return ((serial ^ 0xc0ffee) % 99999).toString();
       }
     };
   }
