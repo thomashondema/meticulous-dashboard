@@ -239,6 +239,9 @@
                         >
                           <button @click="exportShot('tcl'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Decent Espresso TCL (.shot)</button>
                           <button @click="exportShot('json'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Decent JSON (.json)</button>
+                          <button @click="exportShot('beanconqueror'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Beanconqueror JSON (.json)</button>
+                          <button @click="exportShot('gaggiuino'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Gaggiuino JSON (.json)</button>
+                          <button @click="exportShot('gaggimate'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">GaggiMate JSON (.json)</button>
                           <button @click="exportShot('meticulous-json'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Meticulous JSON (Raw)</button>
                           <button @click="exportShot('csv'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Visualizer CSV (.csv)</button>
                         </div>
@@ -954,6 +957,63 @@
           };
           content = JSON.stringify(exportData, null, 2);
           fileName = `shot-${shotId}.json`;
+          mimeType = 'application/json';
+        } else if (format === 'beanconqueror') {
+          // Beanconqueror JSON format
+          const exportData = {
+            config: {
+              brew_id: shotId,
+              date: new Date(this.selectedShot.time).toISOString(),
+              name: this.selectedShot.name || 'Meticulous Shot',
+              grinder: "",
+              grind_setting: "",
+              dose: 0,
+              yield: 0,
+              temperature: 0
+            },
+            graph: {
+              unix_timestamp: data.map(d => Math.floor(new Date(this.selectedShot.time).getTime() / 1000) + (d.time / 1000)),
+              weight: data.map(d => Number((d.shot?.weight || 0).toFixed(2))),
+              pressure: data.map(d => Number((d.shot?.pressure || 0).toFixed(2))),
+              temperature: data.map(d => Number((d.shot?.temperature || 0).toFixed(2))),
+              flow: data.map(d => Number((d.shot?.flow || 0).toFixed(2)))
+            }
+          };
+          content = JSON.stringify(exportData, null, 2);
+          fileName = `shot-${shotId}-beanconqueror.json`;
+          mimeType = 'application/json';
+        } else if (format === 'gaggiuino') {
+          // Gaggiuino-compatible JSON format
+          const exportData = {
+            id: shotId,
+            dateTime: new Date(this.selectedShot.time).toISOString(),
+            profile: this.selectedShot.name || 'Meticulous Shot',
+            shotData: data.map(d => ({
+              t: (d.time / 1000).toFixed(3),
+              p: (d.shot?.pressure || 0).toFixed(2),
+              f: (d.shot?.flow || 0).toFixed(2),
+              w: (d.shot?.weight || 0).toFixed(2),
+              temp: (d.shot?.temperature || 0).toFixed(2)
+            }))
+          };
+          content = JSON.stringify(exportData, null, 2);
+          fileName = `shot-${shotId}-gaggiuino.json`;
+          mimeType = 'application/json';
+        } else if (format === 'gaggimate') {
+          // GaggiMate-compatible JSON format
+          const exportData = {
+            title: this.selectedShot.name || 'Meticulous Shot',
+            timestamp: Math.floor(new Date(this.selectedShot.time).getTime() / 1000),
+            data: {
+              time: data.map(d => (d.time / 1000).toFixed(3)),
+              pressure: data.map(d => (d.shot?.pressure || 0).toFixed(2)),
+              weight: data.map(d => (d.shot?.weight || 0).toFixed(2)),
+              flow: data.map(d => (d.shot?.flow || 0).toFixed(2)),
+              temperature: data.map(d => (d.shot?.temperature || 0).toFixed(2))
+            }
+          };
+          content = JSON.stringify(exportData, null, 2);
+          fileName = `shot-${shotId}-gaggimate.json`;
           mimeType = 'application/json';
         } else if (format === 'meticulous-json') {
           // Meticulous Raw JSON format
