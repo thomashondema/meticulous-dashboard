@@ -965,35 +965,93 @@
           rows.push(headers.join(','));
 
           // Metadata rows
-          rows.push(`meta,,,,,,,,,Name,${this.selectedShot.name || 'Meticulous Shot'},`);
-          rows.push(`meta,,,,,,,,,Date,${new Date(this.selectedShot.time).toISOString()},`);
+          const metadata = [
+            ['Name', this.selectedShot.name || 'Meticulous Shot'],
+            ['Date', new Date(this.selectedShot.time).toISOString()],
+            ['Operator', ''],
+            ['Beans', ''],
+            ['Roastery', ''],
+            ['Grinder Model', ''],
+            ['Grinder Setting', ''],
+            ['Dose', ''],
+          ];
+
+          metadata.forEach(([key, value]) => {
+            rows.push(`meta,,,,,,,,,${key},${value},`);
+          });
 
           data.forEach(d => {
             const elapsed = (d.time / 1000).toFixed(3);
             const pressure = (d.shot?.pressure || 0).toFixed(2);
             const weight = (d.shot?.weight || 0).toFixed(2);
-            const flow = (d.shot?.flow || 0).toFixed(2);
             const temp = (d.shot?.temperature || 0).toFixed(2);
-            // moment,elapsed,pressure,weight,flow_in,flow_out,temp_boiler,temp_in,temp_basket,...
-            rows.push(`moment,${elapsed},${pressure},${weight},${flow},${flow},,${temp},${temp},,,`);
+
+            // The SepCsv parser expects individual rows with specific comments
+            // Pressure row
+            rows.push(`moment,${elapsed},${pressure},,,,,,,,sample: pressure`);
+            // Weight row
+            rows.push(`moment,${elapsed},,${weight},,,,,,,sample: weight`);
+            // Temperature row
+            rows.push(`moment,${elapsed},,,,,${temp},,,sample: temperature`);
           });
 
           content = rows.join('\n');
           fileName = `shot-${shotId}.csv`;
           mimeType = 'text/csv';
         } else if (format === 'tcl') {
-          // Decent Espresso TCL format (.shot)
-          const elapsed = data.map(d => (d.time / 1000).toFixed(3)).join(' ');
-          const pressure = data.map(d => (d.shot?.pressure || 0).toFixed(2)).join(' ');
-          const flow = data.map(d => (d.shot?.flow || 0).toFixed(2)).join(' ');
-          const weight = data.map(d => (d.shot?.weight || 0).toFixed(2)).join(' ');
-          const temp = data.map(d => (d.shot?.temperature || 0).toFixed(2)).join(' ');
+          // Helper functions for TCL formatting
+          const tclList = (values) => `{${values.join(' ')}}`;
+          const tclString = (value) => `{${String(value).replace(/\\/g, '\\\\').replace(/}/g, '\\}')}}`;
+          const num = (value, decimals = 2) => {
+            const n = Number(value);
+            return isFinite(n) ? n.toFixed(decimals) : (0).toFixed(decimals);
+          };
 
-          content = `clock ${Math.floor(new Date(this.selectedShot.time).getTime() / 1000)}\n`;
-          content += `id {${shotId}}\n`;
-          content += `profile_title {${this.selectedShot.name || 'Meticulous Shot'}}\n`;
-          content += `app_version {Meticulous Dashboard}\n`;
-          content += `data {elapsed {${elapsed}} pressure {${pressure}} flow {${flow}} weight {${weight}} temperature_basket {${temp}}}\n`;
+          const elapsed = [];
+          const pressure = [];
+          const weight = [];
+          const flow = [];
+          const flowWeight = [];
+          const temperatureBasket = [];
+          const pressureGoal = [];
+          const flowGoal = [];
+
+          data.forEach(point => {
+            const shot = point.shot || {};
+            const sensors = point.sensors || {};
+            const setpoints = shot.setpoints || {};
+
+            elapsed.push(num((point.time || 0) / 1000, 3));
+            pressure.push(num(shot.pressure ?? 0));
+            weight.push(num(shot.weight ?? 0));
+            flow.push(num(shot.flow ?? 0));
+            flowWeight.push(num(shot.gravimetric_flow ?? 0));
+
+            // Pick best available temperature sensor
+            temperatureBasket.push(num(shot.temperature ?? sensors.bar_down ?? sensors.external_1 ?? 0));
+
+            pressureGoal.push(num(setpoints.pressure ?? 0));
+            flowGoal.push(num(setpoints.flow ?? 0));
+          });
+
+          const clock = Math.floor(new Date(this.selectedShot.time).getTime() / 1000);
+          const profileTitle = this.selectedShot.name || 'Meticulous Shot';
+
+          content = [
+            `clock ${clock}`,
+            `espresso_elapsed ${tclList(elapsed)}`,
+            `espresso_pressure ${tclList(pressure)}`,
+            `espresso_weight ${tclList(weight)}`,
+            `espresso_flow ${tclList(flow)}`,
+            `espresso_flow_weight ${tclList(flowWeight)}`,
+            `espresso_temperature_basket ${tclList(temperatureBasket)}`,
+            `espresso_pressure_goal ${tclList(pressureGoal)}`,
+            `espresso_flow_goal ${tclList(flowGoal)}`,
+            `settings {`,
+            `  profile_title ${tclString(profileTitle)}`,
+            `}`,
+            ``
+          ].join('\n');
 
           fileName = `shot-${shotId}.shot`;
           mimeType = 'text/plain';
