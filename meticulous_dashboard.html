@@ -1092,6 +1092,18 @@
               pointStyle: false,
               tension: 0.1
             });
+            if (data.some(d => d.shot?.setpoints?.pressure !== undefined)) {
+              datasets.push({
+                label: 'Pressure Goal (bar)',
+                data: data.map(d => d.shot?.setpoints?.pressure),
+                borderColor: 'rgba(244, 63, 94, 0.5)',
+                backgroundColor: 'transparent',
+                borderDash: [5, 5],
+                yAxisID: 'y',
+                pointStyle: false,
+                tension: 0.1
+              });
+            }
           }
           if (first.shot && 'flow' in first.shot) {
             datasets.push({
@@ -1103,6 +1115,18 @@
               pointStyle: false,
               tension: 0.1
             });
+            if (data.some(d => d.shot?.setpoints?.flow !== undefined)) {
+              datasets.push({
+                label: 'Flow Goal (ml/s)',
+                data: data.map(d => d.shot?.setpoints?.flow),
+                borderColor: 'rgba(56, 189, 248, 0.5)',
+                backgroundColor: 'transparent',
+                borderDash: [5, 5],
+                yAxisID: 'y1',
+                pointStyle: false,
+                tension: 0.1
+              });
+            }
           }
           if (first.shot && 'gravimetric_flow' in first.shot) {
             datasets.push({
