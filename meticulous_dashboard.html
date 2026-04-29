@@ -194,11 +194,21 @@
               >
                 <div class="flex items-center justify-between">
                   <p class="font-medium" x-text="shot.name || 'Unnamed Shot'"></p>
-                  <span
-                    class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
-                    :class="shot.rating === 'like' ? 'bg-emerald-500/20 text-emerald-400' : shot.rating === 'dislike' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700 text-slate-400'"
-                    x-text="shot.rating || 'unrated'"
-                  ></span>
+                  <div class="flex items-center gap-2">
+                    <template x-if="selectedShot && selectedShot.id !== shot.id">
+                      <span 
+                        @click.stop="compareWith(shot)"
+                        class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300 hover:bg-indigo-600 transition"
+                      >
+                        Compare
+                      </span>
+                    </template>
+                    <span
+                      class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
+                      :class="shot.rating === 'like' ? 'bg-emerald-500/20 text-emerald-400' : shot.rating === 'dislike' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700 text-slate-400'"
+                      x-text="shot.rating || 'unrated'"
+                    ></span>
+                  </div>
                 </div>
                 <p class="mt-1 text-xs text-slate-400" x-text="formatShotTime(shot.time)"></p>
               </div>
@@ -246,8 +256,33 @@
               <template x-if="selectedShot.data">
                 <div>
                   <div class="mb-2 flex items-center justify-between">
-                    <p class="text-xs font-medium text-slate-400">Shot Visualization</p>
+                    <p class="text-xs font-medium text-slate-400">
+                      Shot Visualization 
+                      <template x-if="comparisonShot">
+                        <span class="ml-2 text-[10px] text-indigo-400" x-text="'Comparing with: ' + comparisonShot.name"></span>
+                      </template>
+                    </p>
                     <div class="flex gap-2">
+                      <template x-if="comparisonShot">
+                        <div class="flex items-center gap-2">
+                          <label class="text-[10px] text-slate-400">Offset: <span x-text="comparisonOffset"></span>s</label>
+                          <input 
+                            type="range" 
+                            min="-10" 
+                            max="10" 
+                            step="0.1" 
+                            x-model="comparisonOffset" 
+                            @input="renderChart(selectedShot.data)"
+                            class="h-1.5 w-24 cursor-pointer appearance-none rounded-lg bg-slate-800"
+                          >
+                          <button
+                            @click="comparisonShot = null; comparisonOffset = 0; renderChart(selectedShot.data)"
+                            class="rounded bg-rose-900/50 px-2 py-1 text-[10px] font-medium text-rose-300 hover:bg-rose-800"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      </template>
                       <button
                         @click="chartEnlarged = true; $nextTick(() => renderChart(selectedShot.data))"
                         class="rounded bg-slate-800 px-2 py-1 text-[10px] font-medium text-slate-300 hover:bg-slate-700"
@@ -624,6 +659,8 @@
       editingProfile: null,
       chart: null,
       chartEnlarged: false,
+      comparisonShot: null,
+      comparisonOffset: 0,
       stageCharts: new Map(),
 
       initStageChart(container, stage) {
@@ -882,6 +919,8 @@
 
       async viewShot(shot) {
         this.selectedShot = shot;
+        this.comparisonShot = null;
+        this.comparisonOffset = 0;
         if (!shot.rating && this.api) {
           this.api.getShotRating(shot.id).then(res => {
             if (res.data && 'rating' in res.data) {
@@ -908,7 +947,13 @@
             if (idx !== -1) {
               this.history[idx] = fullShot;
             }
-            this.selectedShot = fullShot;
+            
+            if (this.selectedShot && this.selectedShot.id === shot.id) {
+              this.selectedShot = fullShot;
+            } else if (this.comparisonShot && this.comparisonShot.id === shot.id) {
+              this.comparisonShot = fullShot;
+            }
+
             this.api.getShotRating(fullShot.id).then(ratingRes => {
               if (ratingRes.data && 'rating' in ratingRes.data) {
                 fullShot.rating = ratingRes.data.rating;
@@ -917,10 +962,24 @@
                 }
               }
             }).catch(() => {});
-            this.$nextTick(() => this.renderChart(fullShot.data));
+            this.$nextTick(() => this.renderChart(this.selectedShot.data));
           }
         } catch (e) {
           this.error = `Failed to fetch shot data: ${e?.message || e}`;
+        }
+      },
+
+      async compareWith(shot) {
+        if (!this.api || !this.selectedShot) return;
+        try {
+          const res = await this.api.searchHistory({ ids: [shot.id], dump_data: true });
+          if (res.data.history && res.data.history.length > 0) {
+            this.comparisonShot = res.data.history[0];
+            this.comparisonOffset = 0;
+            this.$nextTick(() => this.renderChart(this.selectedShot.data));
+          }
+        } catch (e) {
+          this.error = `Failed to fetch comparison shot data: ${e?.message || e}`;
         }
       },
 
@@ -1048,17 +1107,64 @@
           this.chart.destroy();
         }
 
-        // Assuming data is an array of objects with time (ms), pressure, flow, weight
         // Convert time from ms to s
         const labels = data.map(d => ((d.time || 0) / 1000).toFixed(1));
         const datasets = [];
+
+        // Prepare comparison data if available
+        let comparisonDatasets = [];
+        if (this.comparisonShot && this.comparisonShot.data) {
+          const offsetMs = (parseFloat(this.comparisonOffset) || 0) * 1000;
+          const compData = this.comparisonShot.data.map(d => ({
+            ...d,
+            time: (d.time || 0) + offsetMs
+          }));
+
+          const compFirst = compData[0];
+          if (compFirst.shot && 'pressure' in compFirst.shot) {
+            comparisonDatasets.push({
+              label: `[Comp] Pressure (bar)`,
+              data: compData.filter(d => d.shot?.pressure !== undefined).map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.pressure })),
+              borderColor: 'rgba(244, 63, 94, 0.3)',
+              backgroundColor: 'transparent',
+              yAxisID: 'y',
+              pointStyle: false,
+              tension: 0.1,
+              borderDash: [2, 2]
+            });
+          }
+          if (compFirst.shot && 'flow' in compFirst.shot) {
+            comparisonDatasets.push({
+              label: `[Comp] Flow (ml/s)`,
+              data: compData.filter(d => d.shot?.flow !== undefined).map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.flow })),
+              borderColor: 'rgba(56, 189, 248, 0.3)',
+              backgroundColor: 'transparent',
+              yAxisID: 'y1',
+              pointStyle: false,
+              tension: 0.1,
+              borderDash: [2, 2]
+            });
+          }
+          if (compFirst.shot && 'weight' in compFirst.shot) {
+            comparisonDatasets.push({
+              label: `[Comp] Weight (g)`,
+              data: compData.filter(d => d.shot?.weight !== undefined).map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.weight })),
+              borderColor: 'rgba(168, 85, 247, 0.3)',
+              backgroundColor: 'transparent',
+              yAxisID: 'y2',
+              pointStyle: false,
+              tension: 0.1,
+              borderDash: [2, 2]
+            });
+          }
+        }
 
         // Identify stage changes
         const annotations = {};
         let lastStatus = null;
         data.forEach((d, i) => {
           if (d.status && d.status !== lastStatus) {
-            const timeS = ((d.time || 0) / 1000).toFixed(1);
+            const timeS = parseFloat(((d.time || 0) / 1000).toFixed(1));
             annotations[`line${i}`] = {
               type: 'line',
               xMin: timeS,
@@ -1085,7 +1191,7 @@
           if (first.shot && 'pressure' in first.shot) {
             datasets.push({
               label: 'Pressure (bar)',
-              data: data.map(d => d.shot?.pressure),
+              data: data.map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.pressure })),
               borderColor: 'rgb(244, 63, 94)', // rose-500
               backgroundColor: 'rgba(244, 63, 94, 0.5)',
               yAxisID: 'y',
@@ -1095,7 +1201,7 @@
             if (data.some(d => d.shot?.setpoints?.pressure !== undefined)) {
               datasets.push({
                 label: 'Pressure Goal (bar)',
-                data: data.map(d => d.shot?.setpoints?.pressure),
+                data: data.map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.setpoints?.pressure })),
                 borderColor: 'rgba(244, 63, 94, 0.5)',
                 backgroundColor: 'transparent',
                 borderDash: [5, 5],
@@ -1108,7 +1214,7 @@
           if (first.shot && 'flow' in first.shot) {
             datasets.push({
               label: 'Flow (ml/s)',
-              data: data.map(d => d.shot?.flow),
+              data: data.map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.flow })),
               borderColor: 'rgb(56, 189, 248)', // sky-400
               backgroundColor: 'rgba(56, 189, 248, 0.5)',
               yAxisID: 'y1',
@@ -1118,7 +1224,7 @@
             if (data.some(d => d.shot?.setpoints?.flow !== undefined)) {
               datasets.push({
                 label: 'Flow Goal (ml/s)',
-                data: data.map(d => d.shot?.setpoints?.flow),
+                data: data.map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.setpoints?.flow })),
                 borderColor: 'rgba(56, 189, 248, 0.5)',
                 backgroundColor: 'transparent',
                 borderDash: [5, 5],
@@ -1131,7 +1237,7 @@
           if (first.shot && 'gravimetric_flow' in first.shot) {
             datasets.push({
               label: 'Grav. Flow (ml/s)',
-              data: data.map(d => d.shot?.gravimetric_flow),
+              data: data.map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.gravimetric_flow })),
               borderColor: 'rgb(34, 211, 238)', // cyan-400
               backgroundColor: 'rgba(34, 211, 238, 0.5)',
               yAxisID: 'y1',
@@ -1142,7 +1248,7 @@
           if (first.shot && 'weight' in first.shot) {
             datasets.push({
               label: 'Weight (g)',
-              data: data.map(d => d.shot?.weight),
+              data: data.map(d => ({ x: parseFloat(((d.time || 0) / 1000).toFixed(1)), y: d.shot?.weight })),
               borderColor: 'rgb(168, 85, 247)', // purple-500
               backgroundColor: 'rgba(168, 85, 247, 0.5)',
               yAxisID: 'y2',
@@ -1155,10 +1261,10 @@
         this.chart = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: labels,
-            datasets: datasets
+            datasets: [...datasets, ...comparisonDatasets]
           },
           options: {
+            parsing: false,
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
@@ -1168,6 +1274,7 @@
             stacked: false,
             scales: {
               x: {
+                type: 'linear',
                 title: { display: true, text: 'Time (s)', color: '#94a3b8' },
                 ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 10 },
                 grid: { color: '#334155' }
