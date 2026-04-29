@@ -737,6 +737,10 @@
         this.actionMessage = '';
         this.connecting = true;
         try {
+          const axiosMod = await import('https://esm.sh/axios');
+          const axios = axiosMod.default || axiosMod;
+          axios.defaults.withCredentials = true;
+
           const Api = await this.loadApiClass();
           const normalized = this.normalizeBaseUrl(this.baseUrl);
           this.api = new Api(undefined, normalized);
