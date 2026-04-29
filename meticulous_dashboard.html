@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-dragdata@2.2.3/dist/chartjs-plugin-dragdata.min.js"></script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100" x-data="dashboardApp()">
@@ -81,6 +82,29 @@
   </section>
 
   <section x-show="connected" x-cloak class="space-y-4">
+    <!-- Popout Chart Modal -->
+    <template x-if="chartEnlarged">
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 md:p-8">
+        <div class="relative flex h-full w-full flex-col rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+          <div class="mb-4 flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-semibold" x-text="selectedShot?.name || 'Shot Visualization'"></h2>
+              <p class="text-sm text-slate-400" x-text="formatShotTime(selectedShot?.time)"></p>
+            </div>
+            <button
+              @click="chartEnlarged = false; $nextTick(() => renderChart(selectedShot.data))"
+              class="rounded-md bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-white"
+            >
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          <div class="flex-1 min-h-0">
+            <canvas id="shotChartEnlarged"></canvas>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <div x-show="activeTab === 'overview'" class="space-y-4">
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
@@ -224,6 +248,12 @@
                   <div class="mb-2 flex items-center justify-between">
                     <p class="text-xs font-medium text-slate-400">Shot Visualization</p>
                     <div class="flex gap-2">
+                      <button
+                        @click="chartEnlarged = true; $nextTick(() => renderChart(selectedShot.data))"
+                        class="rounded bg-slate-800 px-2 py-1 text-[10px] font-medium text-slate-300 hover:bg-slate-700"
+                      >
+                        Popout
+                      </button>
                       <div class="relative" x-data="{ open: false }" @click.away="open = false">
                         <button
                           @click="open = !open"
@@ -593,6 +623,7 @@
       fullProfiles: [],
       editingProfile: null,
       chart: null,
+      chartEnlarged: false,
       stageCharts: new Map(),
 
       initStageChart(container, stage) {
@@ -1009,7 +1040,8 @@
       },
 
       renderChart(data) {
-        const ctx = document.getElementById('shotChart');
+        const chartId = this.chartEnlarged ? 'shotChartEnlarged' : 'shotChart';
+        const ctx = document.getElementById(chartId);
         if (!ctx) return;
 
         if (this.chart) {
@@ -1020,6 +1052,33 @@
         // Convert time from ms to s
         const labels = data.map(d => ((d.time || 0) / 1000).toFixed(1));
         const datasets = [];
+
+        // Identify stage changes
+        const annotations = {};
+        let lastStatus = null;
+        data.forEach((d, i) => {
+          if (d.status && d.status !== lastStatus) {
+            const timeS = ((d.time || 0) / 1000).toFixed(1);
+            annotations[`line${i}`] = {
+              type: 'line',
+              xMin: timeS,
+              xMax: timeS,
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              borderWidth: 1,
+              borderDash: [5, 5],
+              label: {
+                display: true,
+                content: d.status,
+                position: 'start',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                color: '#fff',
+                font: { size: 10 },
+                padding: 4
+              }
+            };
+            lastStatus = d.status;
+          }
+        });
 
         if (data.length > 0) {
           const first = data[0];
@@ -1118,6 +1177,9 @@
             plugins: {
               legend: {
                 labels: { color: '#f1f5f9' }
+              },
+              annotation: {
+                annotations: annotations
               },
               tooltip: {
                 callbacks: {
