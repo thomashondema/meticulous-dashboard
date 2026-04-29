@@ -239,6 +239,7 @@
                         >
                           <button @click="exportShot('tcl'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Decent Espresso TCL (.shot)</button>
                           <button @click="exportShot('json'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Decent JSON (.json)</button>
+                          <button @click="exportShot('meticulous-json'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Meticulous JSON (Raw)</button>
                           <button @click="exportShot('csv'); open = false" class="block w-full px-4 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-700">Visualizer CSV (.csv)</button>
                         </div>
                       </div>
@@ -953,6 +954,11 @@
           };
           content = JSON.stringify(exportData, null, 2);
           fileName = `shot-${shotId}.json`;
+          mimeType = 'application/json';
+        } else if (format === 'meticulous-json') {
+          // Meticulous Raw JSON format
+          content = JSON.stringify(data, null, 2);
+          fileName = `shot-${shotId}-raw.json`;
           mimeType = 'application/json';
         } else if (format === 'csv') {
           // Visualizer.coffee compatible CSV
