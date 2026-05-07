@@ -50,6 +50,14 @@
           >
             Profiles
           </button>
+
+          <button
+            @click="activeTab = 'settings'; fetchAllSettings()"
+            :class="activeTab === 'settings' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'"
+            class="rounded px-3 py-1 text-sm font-medium transition"
+          >
+            Settings
+          </button>
         </nav>
         <button @click="refreshAll" class="rounded-md bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Refresh</button>
         <button @click="disconnect" class="rounded-md bg-rose-700 px-3 py-2 text-sm hover:bg-rose-600">Disconnect</button>
@@ -159,9 +167,49 @@
         <article class="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
           <h3 class="text-xs font-semibold uppercase tracking-wider text-amber-400">Live Temp</h3>
           <p class="mt-2 text-3xl font-bold text-slate-100"><span x-text="liveStatus?.sensors?.t.toFixed(1)"></span> <span class="text-sm font-normal text-slate-500">°C</span></p>
-          <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+          <div class="mt-1 grid grid-cols-2 gap-x-3 gap-y-1">
             <span class="text-[10px] text-amber-300/60" x-text="`Tube: ${liveSensors?.t_tube?.toFixed(1)}°`"></span>
-            <span class="text-[10px] text-amber-300/60" x-text="`Bar: ${liveSensors?.t_bar_mu?.toFixed(1)}°`"></span>
+            <span class="text-[10px] text-amber-300/60" x-text="`Valve: ${liveSensors?.t_valv?.toFixed(1)}°`"></span>
+            <span class="text-[10px] text-amber-300/60" x-text="`Bar U: ${liveSensors?.t_bar_up?.toFixed(1)}°`"></span>
+            <span class="text-[10px] text-amber-300/60" x-text="`Bar MU: ${liveSensors?.t_bar_mu?.toFixed(1)}°`"></span>
+            <span class="text-[10px] text-amber-300/60" x-text="`Bar MD: ${liveSensors?.t_bar_md?.toFixed(1)}°`"></span>
+            <span class="text-[10px] text-amber-300/60" x-text="`Bar D: ${liveSensors?.t_bar_down?.toFixed(1)}°`"></span>
+            <span class="text-[10px] text-amber-300/60" x-text="`Ext 1: ${liveSensors?.t_ext_1?.toFixed(1)}°`"></span>
+            <span class="text-[10px] text-amber-300/60" x-text="`Ext 2: ${liveSensors?.t_ext_2?.toFixed(1)}°`"></span>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" x-show="liveSensors">
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Motor</h3>
+          <div class="mt-2 space-y-1 text-xs">
+            <div class="flex justify-between"><span class="text-slate-500">Pos:</span> <span x-text="liveSensors?.m_pos?.toFixed(2)"></span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Speed:</span> <span x-text="liveSensors?.m_spd?.toFixed(2)"></span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Power:</span> <span x-text="liveSensors?.m_pwr?.toFixed(1)">%</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Current:</span> <span x-text="liveSensors?.m_cur?.toFixed(2)">A</span></div>
+          </div>
+        </article>
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Heater</h3>
+          <div class="mt-2 space-y-1 text-xs">
+            <div class="flex justify-between"><span class="text-slate-500">Power:</span> <span x-text="liveSensors?.bh_pwr?.toFixed(1)">%</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Current:</span> <span x-text="liveSensors?.bh_cur?.toFixed(2)">A</span></div>
+          </div>
+        </article>
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">ADC Raw</h3>
+          <div class="mt-2 space-y-1 text-xs">
+            <div class="flex justify-between"><span class="text-slate-500">ADC 0:</span> <span x-text="liveSensors?.adc_0"></span></div>
+            <div class="flex justify-between"><span class="text-slate-500">ADC 1:</span> <span x-text="liveSensors?.adc_1"></span></div>
+            <div class="flex justify-between"><span class="text-slate-500">ADC 2:</span> <span x-text="liveSensors?.adc_2"></span></div>
+            <div class="flex justify-between"><span class="text-slate-500">ADC 3:</span> <span x-text="liveSensors?.adc_3"></span></div>
+          </div>
+        </article>
+        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">System</h3>
+          <div class="mt-2 space-y-1 text-xs">
+             <div class="flex justify-between"><span class="text-slate-500">Water Status:</span> <span x-text="liveSensors?.water_status ? 'OK' : 'Empty'" :class="liveSensors?.water_status ? 'text-emerald-400' : 'text-rose-400'"></span></div>
           </div>
         </article>
       </div>
@@ -187,27 +235,6 @@
             <button @click="runAction('preheat')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Preheat</button>
             <button @click="runAction('home')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Home</button>
             <button @click="runAction('purge')" class="rounded-md bg-amber-700 px-3 py-2 text-sm hover:bg-amber-600">Purge</button>
-          </div>
-          <div class="mt-4 border-t border-slate-800 pt-3" x-show="liveSensors">
-            <h4 class="text-[10px] font-bold uppercase text-slate-500 mb-2">Motor & Heater Diagnostics</h4>
-            <div class="grid grid-cols-2 gap-2 text-[10px]">
-              <div class="flex justify-between border-b border-slate-800/50 pb-1">
-                <span class="text-slate-400">Motor Pwr:</span>
-                <span class="font-mono" x-text="`${liveSensors?.m_pwr?.toFixed(1)}%`"></span >
-              </div>
-              <div class="flex justify-between border-b border-slate-800/50 pb-1">
-                <span class="text-slate-400">Motor Cur:</span>
-                <span class="font-mono" x-text="`${liveSensors?.m_cur?.toFixed(2)}A`"></span >
-              </div>
-              <div class="flex justify-between border-b border-slate-800/50 pb-1">
-                <span class="text-slate-400">Heater Pwr:</span>
-                <span class="font-mono" x-text="`${liveSensors?.bh_pwr?.toFixed(1)}%`"></span >
-              </div>
-              <div class="flex justify-between border-b border-slate-800/50 pb-1">
-                <span class="text-slate-400">Heater Cur:</span>
-                <span class="font-mono" x-text="`${liveSensors?.bh_cur?.toFixed(2)}A`"></span >
-              </div>
-            </div>
           </div>
           <p x-show="actionMessage" class="mt-3 text-xs text-slate-300" x-text="actionMessage"></p>
         </article>
@@ -696,6 +723,99 @@
           </div>
         </div>
       </template>
+    </div>
+
+    <div x-show="activeTab === 'settings'" class="space-y-6">
+      <div class="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <h2 class="mb-6 text-xl font-semibold">Interactive Settings Management</h2>
+        
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <!-- Boolean Settings -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Machine Features</h3>
+            <div class="space-y-3">
+              <template x-for="field in [
+                {key: 'enable_sounds', label: 'Enable Sounds'},
+                {key: 'auto_start_shot', label: 'Auto-Start Shot'},
+                {key: 'auto_purge_after_shot', label: 'Auto-Purge After Shot'},
+                {key: 'ssh_enabled', label: 'SSH Access'},
+                {key: 'telemetry_service_enabled', label: 'Telemetry'}
+              ]" :key="field.key">
+                <label class="flex items-center justify-between rounded-lg bg-slate-950 p-3">
+                  <span class="text-sm font-medium" x-text="field.label"></span>
+                  <div class="relative inline-flex cursor-pointer items-center">
+                    <input type="checkbox" class="peer sr-only" :checked="settings && settings[field.key]" @change="updateSetting(field.key, $event.target.checked)" />
+                    <div class="h-6 w-11 rounded-full bg-slate-800 peer-checked:bg-indigo-600 transition-colors after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                  </div>
+                </label>
+              </template>
+            </div>
+          </div>
+
+          <!-- Numeric/String Settings -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Configuration</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Heating Timeout (minutes)</label>
+                <input type="number" class="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm" 
+                  :value="settings?.heating_timeout" @change="updateSetting('heating_timeout', parseInt($event.target.value))" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Idle Screen</label>
+                <select class="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm" 
+                  :value="settings?.idle_screen" @change="updateSetting('idle_screen', $event.target.value)">
+                  <option value="default">Default</option>
+                  <option value="black">Black</option>
+                  <option value="logo">Logo</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Update Channel</label>
+                <select class="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm" 
+                  :value="settings?.update_channel" @change="updateSetting('update_channel', $event.target.value)">
+                  <option value="stable">Stable</option>
+                  <option value="beta">Beta</option>
+                  <option value="alpha">Alpha</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 border-t border-slate-800 pt-6">
+          <h3 class="mb-4 text-sm font-bold uppercase tracking-wider text-slate-500">Profile Reordering</h3>
+          <div class="space-y-2 max-w-md">
+            <template x-for="(pId, index) in (settings?.profile_order || [])" :key="pId">
+              <div class="flex items-center justify-between rounded-lg bg-slate-950 p-3">
+                <span class="text-sm" x-text="getProfileName(pId)"></span>
+                <div class="flex gap-2">
+                  <button @click="moveProfileOrder(index, -1)" :disabled="index === 0" class="p-1 text-slate-400 hover:text-white disabled:opacity-20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                  </button>
+                  <button @click="moveProfileOrder(index, 1)" :disabled="index === (settings.profile_order.length - 1)" class="p-1 text-slate-400 hover:text-white disabled:opacity-20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </template>
+            <p x-show="!(settings?.profile_order?.length)" class="text-sm text-slate-500">No profile order defined.</p>
+          </div>
+        </div>
+
+        <div class="mt-8 border-t border-slate-800 pt-6 flex justify-between items-center">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-1">System Maintenance</h3>
+                <p class="text-xs text-slate-400">Download system logs and debug data.</p>
+            </div>
+            <button @click="downloadArchive" class="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-700">Download Archive</button>
+        </div>
+      </div>
+
+      <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <h3 class="mb-3 text-sm font-medium text-slate-300">Raw Settings JSON</h3>
+        <pre class="max-h-96 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-300" x-text="pretty(settings)"></pre>
+      </article>
     </div>
 
     <p x-show="error" x-text="error" class="text-sm text-rose-400"></p>
@@ -1589,8 +1709,63 @@
         try {
           const res = await this.api.fetchAllProfiles();
           this.fullProfiles = Array.isArray(res.data) ? res.data : [];
+          // Also update profiles used for names in settings
+          this.profiles = this.fullProfiles;
         } catch (e) {
           this.error = `Failed to fetch full profiles: ${e?.message || e}`;
+        }
+      },
+
+      async fetchAllSettings() {
+        if (!this.api) return;
+        try {
+          const res = await this.api.getSettings();
+          this.settings = res.data;
+          if (!this.profiles || this.profiles.length === 0) {
+              await this.fetchAllProfiles();
+          }
+        } catch (e) {
+          this.error = `Failed to fetch settings: ${e?.message || e}`;
+        }
+      },
+
+      async updateSetting(key, value) {
+        if (!this.api) return;
+        try {
+          await this.api.updateSettings({ [key]: value });
+          await this.fetchAllSettings();
+        } catch (e) {
+          this.error = `Failed to update setting ${key}: ${e?.message || e}`;
+        }
+      },
+
+      getProfileName(id) {
+        if (!this.profiles) return id;
+        const profile = this.profiles.find(p => p.id === id);
+        return profile ? profile.name : id;
+      },
+
+      async moveProfileOrder(index, direction) {
+        if (!this.settings || !this.settings.profile_order) return;
+        const newOrder = [...this.settings.profile_order];
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+        
+        const temp = newOrder[index];
+        newOrder[index] = newOrder[targetIndex];
+        newOrder[targetIndex] = temp;
+        
+        await this.updateSetting('profile_order', newOrder);
+      },
+
+      async downloadArchive() {
+        if (!this.baseUrl) return;
+        try {
+          const normalized = this.normalizeBaseUrl(this.baseUrl);
+          const watcherUrl = normalized.replace(/:\d+$/, '') + ':3000';
+          window.open(`${watcherUrl}/archive`, '_blank');
+        } catch (e) {
+          this.error = `Failed to download archive: ${e?.message || e}`;
         }
       },
 
